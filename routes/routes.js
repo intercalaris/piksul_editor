@@ -21,11 +21,11 @@ router.post(
     "/gallery",
     upload.fields([{name:"original_image"},{name:"edited_image"}]),
     convertToPng, mainController.createOrUpdateProject);
+router.delete("/gallery/:id", mainController.deleteProject);
 
 
 router.get("/profile", ensureAuth, mainController.getProfile);
 router.get("/feed", ensureAuth, mainController.getFeed);
-
 // router.get("/:id", ensureAuth, mainController.getProject);
 // router.post("/createProject", filesConfig.single("file"), mainController.createProject);
 // router.delete("/deleteProject/:id", mainController.deleteProject);

@@ -1,5 +1,5 @@
 const path = require("path");
-const fs = require("fs");
+const fs = require("fs").promises; // Using fs.promises for async file operations
 const db = require("../config/databaseConfig");
 const ProjectModel = require("../models/ProjectModel");
 
@@ -7,15 +7,20 @@ module.exports = {
   getIndex: (req, res) => {
     res.render("index.ejs");
   },
+
   getEditor: (req, res) => {
     res.render("editor.ejs");
   },
-  getGallery: (req, res) => {
-    db.all("SELECT * FROM projects ORDER BY created_at DESC", (err, rows) => {
-      if (err) {
-        console.error("Error retrieving projects:", err);
-        return res.status(500).send("Database error");
-      }
+
+  getGallery: async (req, res) => {
+    try {
+      const rows = await new Promise((resolve, reject) => {
+        db.all("SELECT * FROM projects ORDER BY created_at DESC", (err, rows) => {
+          if (err) return reject(err);
+          resolve(rows);
+        });
+      });
+
       const projects = rows.map((project) => ({
         id: project.id,
         original_image: project.original_image,
@@ -24,80 +29,74 @@ module.exports = {
         tolerance: project.tolerance,
         created_at: project.created_at,
       }));
+
       res.render("gallery", { projects });
-    });
+    } catch (err) {
+      console.error("Error retrieving projects:", err);
+      res.status(500).send("Database error");
+    }
   },
 
-  getImage: (req, res) => {
+  getImage: async (req, res) => {
     const { filename } = req.params;
     const filePath = path.join(__dirname, "../data/img", filename);
-    fs.access(filePath, fs.constants.F_OK, (err) => {
-      if (err) {
-        console.error("Image not found:", filePath);
-        return res.status(404).send("Image not found");
-      }
+
+    try {
+      await fs.access(filePath); // Check if the file exists
       res.sendFile(filePath);
-    });
+    } catch (err) {
+      console.error("Image not found:", filePath);
+      res.status(404).send("Image not found");
+    }
   },
 
   getProfile: async (req, res) => {
     try {
       const projects = await ProjectModel.find({ user: req.user.id });
-      res.render("profile.ejs", { projects: projects, user: req.user });
+      res.render("profile.ejs", { projects, user: req.user });
     } catch (err) {
-      console.log(err);
+      console.error("Error retrieving profile:", err);
     }
   },
 
-  createOrUpdateProject: (req, res) => {
+  createOrUpdateProject: async (req, res) => {
     const { grid_size, tolerance, project_id } = req.body;
     const originalImage = req.files.original_image[0];
     const editedImage = req.files.edited_image[0];
 
-    const handleError = (err, message) => {
-      console.error(message, err);
-      return res.status(500).json({ error: message });
-    };
-
-    if (project_id) {
-      // Update existing project
-      const { originalImagePath, editedImagePath } = ProjectModel.saveImages(project_id, originalImage, editedImage);
-
-      ProjectModel.updateProject(
-        project_id,
-        originalImagePath,
-        editedImagePath,
-        grid_size,
-        tolerance,
-        (err) => {
-          if (err) return handleError(err, "Database update error");
-          res.json({ project_id, message: "Project updated successfully" });
-        }
-      );
-    } else {
-      // Insert a new project
-      ProjectModel.insertProject(grid_size, tolerance, (err, newProjectId) => {
-        if (err) return handleError(err, "Database insertion error");
-
-        const { originalImagePath, editedImagePath } = ProjectModel.saveImages(newProjectId, originalImage, editedImage);
-
-        ProjectModel.updateProject(
-          newProjectId,
-          originalImagePath,
-          editedImagePath,
-          grid_size,
-          tolerance,
-          (updateErr) => {
-            if (updateErr) return handleError(updateErr, "Database update error");
-            res.json({ project_id: newProjectId, message: "Project saved successfully" });
-          }
-        );
-      });
+    try {
+      if (project_id) {
+        // Update existing project
+        const { originalImagePath, editedImagePath } = await ProjectModel.saveImages(project_id, originalImage, editedImage);
+        await ProjectModel.updateProject(project_id, originalImagePath, editedImagePath, grid_size, tolerance);
+        res.json({ project_id, message: "Project updated successfully" });
+      } else {
+        // Insert a new project
+        const newProjectId = await ProjectModel.insertProject(grid_size, tolerance);
+        const { originalImagePath, editedImagePath } = await ProjectModel.saveImages(newProjectId, originalImage, editedImage);
+        await ProjectModel.updateProject(newProjectId, originalImagePath, editedImagePath, grid_size, tolerance);
+        res.json({ project_id: newProjectId, message: "Project saved successfully" });
+      }
+    } catch (err) {
+      console.error("Error processing project:", err);
+      res.status(500).json({ error: "An error occurred while processing the project" });
     }
   },
-};
 
-
+  deleteProject: async (req, res) => {
+    const projectID = req.params.id;
+    try {
+      // Delete project from database
+      await ProjectModel.deleteProject(projectID);
+      // Delete associated image files
+      await ProjectModel.deleteProjectImages(projectID);
+      console.log(`Project ${projectID} deleted.`);
+      res.send(`Project ${projectID} deleted.`);
+    } catch (err) {
+      console.error("Error deleting project:", err);
+      res.status(500).send("Failed to delete project");
+    }
+  },
   // getFeed: async (req, res) => {
   //   try {
   //     const projects = await Project.find().sort({ createdAt: "desc" }).lean();
@@ -150,3 +149,4 @@ module.exports = {
   //     res.redirect("/profile");
   //   }
   // },
+};
