@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <title>Saved Projects</title>
+</head>
+<body>
+  <header>
+    <div class="banner">
+      <button class="button login"><span>Log In</span></button>
+      <button class="button create-account"><span>Create an Account</span></button>
+      <button class="button logout"><span>Log Out</span></button>
+    </div>
+  </header>
+  <main>
+    <h1>Saved Projects</h1>
+    <section class="projects-gallery">
+      <% if (projects.length === 0) { %>
+        <p>No projects saved yet.</p>
+      <% } else { %>
+        <% projects.forEach(project => { %>
+          <div class="project-card" data-id="<%= project.id %>">
+            <img src="/gallery/image/<%= project.edited_image %>" alt="Project Thumbnail">
+            <div class="project-info">
+              <p>Grid Size: <%= project.grid_size %></p>
+              <p>Tolerance: <%= project.tolerance %></p>
+              <p>Created At: <%= new Date(project.created_at).toLocaleString() %></p>
+            </div>
+            <div class="project-buttons">
+              <a href="/editor/<%= project.id %>" class="button" id="open-project">Open in Editor</a>
+              <a class="button delete-project">Delete</a>
+            </div>
+          </div>
+        <% }); %>
+      <% } %>
+    </section>
+  </main>
+  <script type="text/javascript" src="/js/main.js"></script>
+</body>
+</html>
