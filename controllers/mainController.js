@@ -1,5 +1,4 @@
 const path = require("path");
-const fs = require("fs").promises; // Using fs.promises for async file operations
 const db = require("../config/databaseConfig");
 const ProjectModel = require("../models/ProjectModel");
 
@@ -42,20 +41,16 @@ module.exports = {
     const filePath = path.join(__dirname, "../data/img", filename);
 
     try {
-      await fs.access(filePath); // Check if the file exists
-      res.sendFile(filePath);
+      // Serve the requested image
+      res.sendFile(filePath, (err) => {
+        if (err) {
+          console.error("Error sending image file:", filePath, err);
+          res.status(404).send("Image not found");
+        }
+      });
     } catch (err) {
-      console.error("Image not found:", filePath);
-      res.status(404).send("Image not found");
-    }
-  },
-
-  getProfile: async (req, res) => {
-    try {
-      const projects = await ProjectModel.find({ user: req.user.id });
-      res.render("profile.ejs", { projects, user: req.user });
-    } catch (err) {
-      console.error("Error retrieving profile:", err);
+      console.error("Error accessing image:", err);
+      res.status(500).send("Failed to retrieve image");
     }
   },
 
@@ -97,6 +92,8 @@ module.exports = {
       res.status(500).send("Failed to delete project");
     }
   },
+};
+
   // getFeed: async (req, res) => {
   //   try {
   //     const projects = await Project.find().sort({ createdAt: "desc" }).lean();
@@ -149,4 +146,3 @@ module.exports = {
   //     res.redirect("/profile");
   //   }
   // },
-};

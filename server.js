@@ -58,36 +58,3 @@ const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
-
-
-
-// OLD SERVER.JS, NEEDS TO BE SPLIT UP
-
-app.delete('/gallery/:id', (req, res) => {
-  const projectID = req.params.id;
-  const originalImagePath = path.join(__dirname, 'data/img', `${projectID}_original.png`);
-  const editedImagePath = path.join(__dirname, 'data/img', `${projectID}_edited.png`);
-  // delete from SQL
-  db.run('DELETE FROM projects WHERE id = ?', [projectID], (deleteErr) => {
-    if (deleteErr) {
-      console.error('Error deleting project from database:', deleteErr);
-      return res.status(500).send('Failed to delete project');
-    }
-    // delete associated image files
-    [originalImagePath, editedImagePath].forEach((filePath) => {
-      fs.unlink(filePath, (unlinkErr) => {
-        if (unlinkErr && unlinkErr.code !== 'ENOENT') {
-          console.error(`Error deleting file ${filePath}:`, unlinkErr);
-        }
-      });
-    });
-    console.log(`Project ${projectID} deleted.`);
-    res.send(`Project ${projectID} deleted.`);
-  });
-});
-
-
-// Start the server
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});

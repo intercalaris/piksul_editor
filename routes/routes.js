@@ -18,14 +18,13 @@ router.get("/editor", mainController.getEditor);
 router.get("/gallery", mainController.getGallery);
 router.get("/gallery/image/:filename", mainController.getImage);
 router.post(
-    "/gallery",
-    upload.fields([{name:"original_image"},{name:"edited_image"}]),
-    convertToPng, mainController.createOrUpdateProject);
+    "/projects",
+    upload.fields([{ name: "original_image" }, { name: "edited_image" }]),
+    mainController.createOrUpdateProject);   
 router.delete("/gallery/:id", mainController.deleteProject);
 
-
-router.get("/profile", ensureAuth, mainController.getProfile);
-router.get("/feed", ensureAuth, mainController.getFeed);
+// router.get("/profile", ensureAuth, mainController.getProfile);
+// router.get("/feed", ensureAuth, mainController.getFeed);
 // router.get("/:id", ensureAuth, mainController.getProject);
 // router.post("/createProject", filesConfig.single("file"), mainController.createProject);
 // router.delete("/deleteProject/:id", mainController.deleteProject);
