@@ -21,7 +21,7 @@ router.post(
     "/projects",
     upload.fields([{ name: "original_image" }, { name: "edited_image" }]),
     mainController.createOrUpdateProject);   
-router.delete("/gallery/:id", mainController.deleteProject);
+router.delete("/projects/:id", mainController.deleteProject);
 
 // router.get("/profile", ensureAuth, mainController.getProfile);
 // router.get("/feed", ensureAuth, mainController.getFeed);

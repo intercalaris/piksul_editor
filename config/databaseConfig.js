@@ -28,7 +28,7 @@ function initDB() {
   db.run(`
     CREATE TABLE IF NOT EXISTS projects (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
+      user_id INTEGER,
       original_image TEXT,
       edited_image TEXT,
       grid_size INTEGER,

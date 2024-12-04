@@ -78,6 +78,7 @@ async function deleteProject(click) {
 
 uploadInput?.addEventListener('change', async (event) => {
     const file = event.target.files[0];
+    originalFileName = file.name.split('.')[0];
     projectId = null; // reset project ID
     editedImageURL = null; // reset snapped image
     divisor.style.backgroundImage = ''; // clear snapped image UI

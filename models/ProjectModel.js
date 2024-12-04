@@ -12,11 +12,11 @@ const saveImages = async (id, originalImage, editedImage) => {
 };
 
 // Insert new project
-const insertProject = async (gridSize, tolerance) => {
+const insertProject = async (gridSize, tolerance, userId = null) => {
   return new Promise((resolve, reject) => {
     db.run(
-      `INSERT INTO projects (original_image, edited_image, grid_size, tolerance) VALUES (?, ?, ?, ?)`,
-      ["placeholder", "placeholder", parseInt(gridSize, 10), parseInt(tolerance, 10)],
+      `INSERT INTO projects (user_id, original_image, edited_image, grid_size, tolerance) VALUES (?, ?, ?, ?, ?)`,
+      [userId, "placeholder", "placeholder", parseInt(gridSize, 10), parseInt(tolerance, 10)],
       function (err) {
         if (err) return reject(err);
         resolve(this.lastID); // Return new project ID
