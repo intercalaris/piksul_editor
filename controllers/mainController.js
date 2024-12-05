@@ -8,8 +8,36 @@ module.exports = {
   },
 
   getEditor: (req, res) => {
-    res.render("editor.ejs");
+    res.render('editor.ejs', { 
+      project: { id: '', original_image: '', grid_size: '' } 
+    });
   },
+
+
+  openInEditor: async (req, res) => {
+    const id = req.params.id;
+    try {
+      const project = await new Promise((resolve, reject) => {
+        db.get("SELECT * FROM projects WHERE id = ?", [id], (err, row) => {
+          if (err) return reject(err);
+          resolve(row);
+        });
+      });
+      if (!project) {
+        return res.status(404).send("Project not found");
+      }
+      res.render("editor.ejs", { project });
+    } catch (error) {
+      console.error("Error fetching project:", error);
+      res.status(500).send("Error loading project");
+    }
+  },
+  
+
+
+
+
+
 
   getGallery: async (req, res) => {
     try {
@@ -125,43 +153,5 @@ module.exports = {
   },
   
 };
-
-  // getFeed: async (req, res) => {
-  //   try {
-  //     const projects = await Project.find().sort({ createdAt: "desc" }).lean();
-  //     res.render("feed.ejs", { projects: projects });
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  // },
-
-  // getProject: async (req, res) => {
-  //   try {
-  //     const project = await Project.findById(req.params.id);
-  //     res.render("projects.ejs", { project: project, user: req.user });
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  // },
-
-  // createProject: async (req, res) => {
-  //   try {
-  //     // Upload image to cloudinary
-  //     const result = await cloudinary.uploader.upload(req.file.path);
-
-  //     await Project.create({
-  //       title: req.body.title,
-  //       image: result.secure_url,
-  //       cloudinaryId: result.public_id,
-  //       caption: req.body.caption,
-  //       likes: 0,
-  //       user: req.user.id,
-  //     });
-  //     console.log("Project has been added!");
-  //     res.redirect("/profile");
-  //   } catch (err) {
-  //     console.log(err);
-  //   }
-  // },
 
 

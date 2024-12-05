@@ -16,7 +16,7 @@ router.post("/signup", userController.postSignup);
 router.get("/", mainController.getIndex);
 
 router.get("/editor", mainController.getEditor);
-// router.get("/editor/:id", mainController.openInEditor);
+router.get("/editor/:id", mainController.openInEditor);
 
 router.get("/gallery", mainController.getGallery);
 router.get("/gallery/image/:filename", mainController.getImage);

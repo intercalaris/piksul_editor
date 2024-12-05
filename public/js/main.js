@@ -81,9 +81,8 @@ async function deleteProject(click) {
 uploadInput?.addEventListener('change', async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     originalFileName = file.name.split('.')[0];
-    projectId = null; // Reset project ID
+    projectId = null; // Reset project ID TODO, CHECK IF DELETE
     editedImageURL = null; // Reset snapped image
     divisor.style.backgroundImage = ''; // Clear snapped image UI
 
@@ -114,13 +113,11 @@ saveProjectButton?.addEventListener('click', async () => {
     formData.append('edited_image', new File([editedBlob], 'edited.png'));
     formData.append('grid_size', gridSizeInput.value);
     if (projectId) formData.append('project_id', projectId);
-
     try {
         const response = await fetch('/projects', {
             method: 'POST',
             body: formData,
         });
-
         if (!response.ok) {
             throw new Error('Failed to save the project');
         }
@@ -159,6 +156,45 @@ openProjectButtons?.forEach(button => button.addEventListener("click", openProje
 slider?.addEventListener('input', () =>  {
     divisor.style.width = slider.value + "%";
 });
+
+
+
+
+
+
+// SET UP EDITOR AFTER 'OPEN PROJECT' IN GALLERY IS CLICKED AND ENDPOINT REDIRECTS
+document.addEventListener('DOMContentLoaded', () => {
+    const editorMain = document.getElementById('editor');
+    if (editorMain) {
+        const projectId = editorMain.dataset.projectId;
+        const originalImageFilename = editorMain.dataset.originalImage; // Corrected here
+        const gridSize = editorMain.dataset.gridSize;
+
+        if (projectId && originalImageFilename) {
+            const imagePath = `/gallery/image/${originalImageFilename}`; // Form URL to fetch image from backend
+            // Use image setup function also used uploaded inputs
+            setupOriginalImage(imagePath, document.querySelector('#comparison figure'));
+            const img = new Image();
+            img.onload = () => {
+                controls.classList.remove('hidden'); // Show grid controls
+                comparison.classList.remove('hidden'); // Show comparison block
+                snapButton.classList.remove('hidden'); // Show snap button
+                populateGridValue(img, gridSize || estimatedGridSize); // Populate grid size if available
+            };
+            img.src = imagePath;
+        }
+    }
+});
+
+
+
+
+
+
+
+
+
+
 
 
 // CALCULATIONS
