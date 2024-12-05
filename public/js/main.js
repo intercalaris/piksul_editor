@@ -38,28 +38,19 @@ function setupSnappedImage(editedImageURL) {
     divisor.style.backgroundSize = `${comparisonRect.width}px ${comparisonRect.height}px`;
     divisor.style.backgroundRepeat = "no-repeat";
     divisor.style.backgroundPosition = "top left";
-
     // Show buttons only after snapping
     downloadButton.classList.remove('hidden');
     saveProjectButton.classList.remove('hidden');
-
     console.log("Snapped image setup complete.");
 }
 
-function populateGridValue(image) {
-    const gridSize = estimateGridSize(image);
+function populateGridValue(img) {
+    const gridSize = estimateGridSize(img);
     gridSizeInput.value = gridSize;
     console.log("Estimated grid size:", gridSize);
     return gridSize;
 }
-// OPEN PROJECT FUNCTION UNFINISHED... figuring out logic for it
-function openProject(click) {
-    const openProjectButton = click.target;
-    const project = openProjectButton.closest('.project-card');
-    const projectID = project.getAttribute("data-id");
-    //load original image and save to const
-    //load edited image and save to const
-} 
+
 async function deleteProject(click) {
     console.log('delete commencing');
     const deleteProjectButton = click.target;
@@ -85,14 +76,11 @@ uploadInput?.addEventListener('change', async (event) => {
     projectId = null; // Reset project ID TODO, CHECK IF DELETE
     editedImageURL = null; // Reset snapped image
     divisor.style.backgroundImage = ''; // Clear snapped image UI
-
     // reset visibility for new uploads
     downloadButton.classList.add('hidden');
     saveProjectButton.classList.add('hidden');
-
     const originalImageURL = URL.createObjectURL(file);
     originalBlob = await fetch(originalImageURL).then((res) => res.blob()); // Save uploaded image blob
-
     setupOriginalImage(originalImageURL, document.querySelector('#comparison figure'));
 
     const img = new Image();
@@ -100,7 +88,7 @@ uploadInput?.addEventListener('change', async (event) => {
         controls.classList.remove('hidden'); // Show grid controls
         comparison.classList.remove('hidden'); // Show comparison block
         snapButton.classList.remove('hidden'); // Show snap button
-        populateGridValue(img, estimatedGridSize); // Populate grid size
+        populateGridValue(img);
     };
     img.src = originalImageURL;
 });
@@ -133,13 +121,16 @@ saveProjectButton?.addEventListener('click', async () => {
     }
 });
 
-snapButton?.addEventListener('click', () => {
+snapButton?.addEventListener('click', snapButtonClick);
+
+function snapButtonClick() {
     const userGridSize = parseInt(gridSizeInput.value, 10) || estimatedGridSize;
     snapToGrid(userGridSize);
     // Show buttons only after snapping
     downloadButton.classList.remove('hidden');
     saveProjectButton.classList.remove('hidden');
-});
+}
+
 
 
 downloadButton?.addEventListener('click', () => {
@@ -167,19 +158,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const editorMain = document.getElementById('editor');
     if (editorMain) {
         const projectId = editorMain.dataset.projectId;
-        const originalImageFilename = editorMain.dataset.originalImage; // Corrected here
+        const originalImageFilename = editorMain.dataset.originalImage;
         const gridSize = editorMain.dataset.gridSize;
-
+        console.log({projectId, originalImageFilename, gridSize})
         if (projectId && originalImageFilename) {
-            const imagePath = `/gallery/image/${originalImageFilename}`; // Form URL to fetch image from backend
-            // Use image setup function also used uploaded inputs
+            const imagePath = `/gallery/image/${originalImageFilename}`; // fetch image from backend
+            // Use image setup function (same as for uploaded inputs)
             setupOriginalImage(imagePath, document.querySelector('#comparison figure'));
             const img = new Image();
             img.onload = () => {
                 controls.classList.remove('hidden'); // Show grid controls
                 comparison.classList.remove('hidden'); // Show comparison block
                 snapButton.classList.remove('hidden'); // Show snap button
-                populateGridValue(img, gridSize || estimatedGridSize); // Populate grid size if available
+                // populateGridValue(img, gridSize); 
+                gridSizeInput.value = gridSize;
+                snapButtonClick();
+
             };
             img.src = imagePath;
         }
