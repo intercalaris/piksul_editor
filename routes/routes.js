@@ -14,13 +14,17 @@ router.post("/signup", userController.postSignup);
 
 // Navigation and Project Routes
 router.get("/", mainController.getIndex);
+
 router.get("/editor", mainController.getEditor);
+// router.get("/editor/:id", mainController.openInEditor);
+
 router.get("/gallery", mainController.getGallery);
 router.get("/gallery/image/:filename", mainController.getImage);
-router.post(
-    "/projects",
+
+router.post("/projects", 
     upload.fields([{ name: "original_image" }, { name: "edited_image" }]),
     mainController.createOrUpdateProject);   
+
 router.delete("/projects/:id", mainController.deleteProject);
 
 // router.get("/profile", ensureAuth, mainController.getProfile);
