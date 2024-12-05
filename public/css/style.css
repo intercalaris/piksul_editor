@@ -98,7 +98,9 @@ img {
   display: flex;
   justify-content: space-between;
 }
-
+.hidden {
+  display: none;
+}
 
 
 /* COMPARISON DISPLAY */
@@ -166,3 +168,4 @@ input[type=range]::-moz-range-thumb {
   height: 15px;
   background: #fff;
 }
+

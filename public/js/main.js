@@ -2,7 +2,7 @@ const uploadInput = document.getElementById('upload');
 const snapButton = document.getElementById('snapButton');
 const downloadButton = document.getElementById('downloadButton');
 const gridSizeInput = document.getElementById('gridSizeInput');
-const toleranceInput = document.getElementById('toleranceInput');
+// const toleranceInput = document.getElementById('toleranceInput');
 const controls = document.getElementById('controls');
 const divisor = document.getElementById('divisor');
 const slider = document.getElementById('slider');
@@ -31,24 +31,27 @@ function setupOriginalImage(url, imgElement) {
     };
     img.src = url;
 }
+
 function setupSnappedImage(editedImageURL) {
     divisor.style.backgroundImage = `url(${editedImageURL})`;
-    // use size of container
     const comparisonRect = comparison.getBoundingClientRect();
     divisor.style.backgroundSize = `${comparisonRect.width}px ${comparisonRect.height}px`;
     divisor.style.backgroundRepeat = "no-repeat";
     divisor.style.backgroundPosition = "top left";
-    downloadButton.style.display = 'inline-block';
-    saveProjectButton.style.display = 'inline-block';
+
+    // Show buttons only after snapping
+    downloadButton.classList.remove('hidden');
+    saveProjectButton.classList.remove('hidden');
+
     console.log("Snapped image setup complete.");
 }
-function populateGridAndTolerance(image, defaultGridSize, defaultTolerance) {
-    const tolerance = defaultTolerance;
-    const gridSize = estimateGridSize(image, tolerance);
+
+
+function populateGridValue(image) {
+    const gridSize = estimateGridSize(image);
     gridSizeInput.value = gridSize;
-    toleranceInput.value = tolerance;
-    console.log("Estimated grid size:", gridSize, "and tolerance:", tolerance);
-    return { gridSize, tolerance };
+    console.log("Estimated grid size:", gridSize);
+    return gridSize;
 }
 // OPEN PROJECT FUNCTION UNFINISHED... figuring out logic for it
 function openProject(click) {
@@ -78,32 +81,41 @@ async function deleteProject(click) {
 
 uploadInput?.addEventListener('change', async (event) => {
     const file = event.target.files[0];
+    if (!file) return;
+
     originalFileName = file.name.split('.')[0];
-    projectId = null; // reset project ID
-    editedImageURL = null; // reset snapped image
-    divisor.style.backgroundImage = ''; // clear snapped image UI
-    downloadButton.style.display = 'none'; // hide download button
+    projectId = null; // Reset project ID
+    editedImageURL = null; // Reset snapped image
+    divisor.style.backgroundImage = ''; // Clear snapped image UI
+
+    // Explicitly reset visibility for new uploads
+    downloadButton.classList.add('hidden');
+    saveProjectButton.classList.add('hidden');
+    downloadButton.style.display = ''; // Reset inline style
+    saveProjectButton.style.display = ''; // Reset inline style
 
     const originalImageURL = URL.createObjectURL(file);
-    originalBlob = await fetch(originalImageURL).then((res) => res.blob()); // save uploaded image  b l o b
+    originalBlob = await fetch(originalImageURL).then((res) => res.blob()); // Save uploaded image blob
 
     setupOriginalImage(originalImageURL, document.querySelector('#comparison figure'));
 
     const img = new Image();
     img.onload = () => {
-        controls.style.display = 'block';
-        comparison.style.display = 'block';
-        const { gridSize, tolerance } = populateGridAndTolerance(img, estimatedGridSize, estimatedTolerance);
-        snapButton.style.display = 'inline-block';
+        controls.classList.remove('hidden'); // Show grid controls
+        comparison.classList.remove('hidden'); // Show comparison block
+        snapButton.classList.remove('hidden'); // Show snap button
+        populateGridValue(img, estimatedGridSize); // Populate grid size
     };
     img.src = originalImageURL;
 });
+
+
+
 saveProjectButton?.addEventListener('click', async () => {
     const formData = new FormData();
     formData.append('original_image', new File([originalBlob], 'original.png'));
     formData.append('edited_image', new File([editedBlob], 'edited.png'));
     formData.append('grid_size', gridSizeInput.value);
-    formData.append('tolerance', toleranceInput.value);
     if (projectId) formData.append('project_id', projectId);
 
     try {
@@ -126,11 +138,16 @@ saveProjectButton?.addEventListener('click', async () => {
         console.error('Error saving the project:', error);
     }
 });
+
 snapButton?.addEventListener('click', () => {
     const userGridSize = parseInt(gridSizeInput.value, 10) || estimatedGridSize;
-    const userTolerance = parseInt(toleranceInput.value, 10) || estimatedTolerance;
-    snapToGrid(userGridSize, userTolerance);
+    snapToGrid(userGridSize);
+    // Show buttons only after snapping
+    downloadButton.classList.remove('hidden');
+    saveProjectButton.classList.remove('hidden');
 });
+
+
 downloadButton?.addEventListener('click', () => {
     if (editedImageURL) {
         const link = document.createElement('a');
@@ -147,8 +164,9 @@ slider?.addEventListener('input', () =>  {
 });
 
 
-// MAFFAMATIKS
-function estimateGridSize(img, tolerance) {
+// CALCULATIONS
+function estimateGridSize(img) {
+    const tolerance = 30;
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = img.width;
@@ -161,82 +179,43 @@ function estimateGridSize(img, tolerance) {
     const height = canvas.height;
     let colorChanges = [];
 
-    // Analyze horizontal and vertical lines to estimate grid size
-    for (let y = 0; y < height; y++) {
-        let prevColor = [data[y * width * 4], data[y * width * 4 + 1], data[y * width * 4 + 2]];
-        let count = 1;
-        for (let x = 1; x < width; x++) {
-            const index = (y * width + x) * 4;
-            const currentColor = [data[index], data[index + 1], data[index + 2]];
-            if (colorsAreDifferent(prevColor, currentColor, tolerance)) {
-                if (count > 1) {
-                    colorChanges.push(count);
+    function analyzeLine(primaryLimit, secondaryLimit, getIndex) {
+        for (let primary = 0; primary < primaryLimit; primary++) {
+            let prevColor = [data[getIndex(primary, 0)], data[getIndex(primary, 0) + 1], data[getIndex(primary, 0) + 2]];
+            let count = 1;
+            for (let secondary = 1; secondary < secondaryLimit; secondary++) {
+                const index = getIndex(primary, secondary);
+                const currentColor = [data[index], data[index + 1], data[index + 2]];
+                if (colorsAreDifferent(prevColor, currentColor, tolerance)) {
+                    if (count > 1) colorChanges.push(count);
+                    count = 1;
+                } else {
+                    count++;
                 }
-                count = 1;
-            } else {
-                count++;
-            }
-            prevColor = currentColor;
-        }
-    }
+                prevColor = currentColor;
+    }}}
 
-    for (let x = 0; x < width; x++) {
-        let prevColor = [data[x * 4], data[x * 4 + 1], data[x * 4 + 2]];
-        let count = 1;
-        for (let y = 1; y < height; y++) {
-            const index = (y * width + x) * 4;
-            const currentColor = [data[index], data[index + 1], data[index + 2]];
-            if (colorsAreDifferent(prevColor, currentColor, tolerance)) {
-                if (count > 1) {
-                    colorChanges.push(count);
-                }
-                count = 1;
-            } else {
-                count++;
-            }
-            prevColor = currentColor;
-        }
-    }
+    analyzeLine(height, width, (y, x) => (y * width + x) * 4); // Horizontal
+    analyzeLine(width, height, (x, y) => (y * width + x) * 4); // Vertical
 
     console.log(`Total color changes: ${colorChanges.length}`);
-
-    // Sort color changes to evaluate thresholds
     colorChanges.sort((a, b) => a - b);
-    const percentile75Index = Math.floor(0.75 * colorChanges.length);
-    const lengthThreshold = colorChanges[percentile75Index];
-
-    // Filter using the 75th percentile to remove larger homogeneous regions
+    const lengthThreshold = colorChanges[Math.floor(0.75 * colorChanges.length)];
     const filteredChanges = colorChanges.filter(value => value <= lengthThreshold);
 
-    console.log(`Filtered color changes count: ${filteredChanges.length}`);
-    console.log(`Sample of filtered changes (first 20): ${filteredChanges.slice(0, 20).join(', ')}`);
-
-    // Calculate the frequency of each grid size in filteredChanges
     const frequencyMap = {};
     filteredChanges.forEach(value => {
         frequencyMap[value] = (frequencyMap[value] || 0) + 1;
     });
 
     const sortedFrequencies = Object.entries(frequencyMap).sort((a, b) => b[1] - a[1]);
-
-    console.log(
-        `Top 10 most frequent run lengths: ${sortedFrequencies.slice(0, 10).map(([value, freq]) => `${value}: ${freq}`).join(', ')}` 
-    );
-
-    // Generate images for top 3 grid size candidates and select the best visually
     const topCandidates = sortedFrequencies.slice(0, 3).map(([value]) => parseInt(value));
-    const evaluationScores = topCandidates.map(candidateSize => {
-        return evaluateSnapping(img, candidateSize, tolerance);
-    });
-
+    const evaluationScores = topCandidates.map(candidateSize => evaluateSnapping(img, candidateSize));
     const bestCandidateIndex = evaluationScores.indexOf(Math.min(...evaluationScores));
-    const finalGridSize = topCandidates[bestCandidateIndex];
-
-    console.log(`Estimated grid size: ${finalGridSize}`);
-    return finalGridSize;
+    return topCandidates[bestCandidateIndex];
 }
 
-function evaluateSnapping(img, gridSize, tolerance) {
+function evaluateSnapping(img, gridSize) {
     console.log(`Evaluating snapping quality for grid size: ${gridSize}`);
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -326,8 +305,8 @@ function colorsAreDifferent(color1, color2, tolerance) {
 }
 
 
-function snapToGrid(gridSize, tolerance) {
-    console.log("Snapping to grid with size:", gridSize, "and tolerance:", tolerance);
+function snapToGrid(gridSize) {
+    console.log("Snapping to grid with size:", gridSize, "and tolerance: 30");
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
