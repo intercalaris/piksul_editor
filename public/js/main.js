@@ -46,7 +46,6 @@ function setupSnappedImage(editedImageURL) {
     console.log("Snapped image setup complete.");
 }
 
-
 function populateGridValue(image) {
     const gridSize = estimateGridSize(image);
     gridSizeInput.value = gridSize;
@@ -88,11 +87,9 @@ uploadInput?.addEventListener('change', async (event) => {
     editedImageURL = null; // Reset snapped image
     divisor.style.backgroundImage = ''; // Clear snapped image UI
 
-    // Explicitly reset visibility for new uploads
+    // reset visibility for new uploads
     downloadButton.classList.add('hidden');
     saveProjectButton.classList.add('hidden');
-    downloadButton.style.display = ''; // Reset inline style
-    saveProjectButton.style.display = ''; // Reset inline style
 
     const originalImageURL = URL.createObjectURL(file);
     originalBlob = await fetch(originalImageURL).then((res) => res.blob()); // Save uploaded image blob
