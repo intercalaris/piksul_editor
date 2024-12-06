@@ -22,15 +22,23 @@ let estimatedGridSize = 8;
 let estimatedTolerance = 30;
 
 function setupOriginalImage(url, imgElement) {
-    const img = new Image();
-    img.onload = () => {
-        const aspectRatio = img.width / img.height;
-        comparison.style.aspectRatio = `${aspectRatio}`;
-        imgElement.style.backgroundImage = `url(${url})`;
-        console.log("Original image loaded successfully.");
-    };
-    img.src = url;
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const aspectRatio = img.width / img.height;
+            comparison.style.aspectRatio = `${aspectRatio}`;
+            imgElement.style.backgroundImage = `url(${url})`;
+            console.log("Original image loaded successfully.");
+            resolve(); 
+        };
+        img.onerror = () => {
+            console.error("Error loading image:", url);
+            reject(new Error("Failed to load image")); 
+        };
+        img.src = url; //start image load
+    });
 }
+
 
 function setupSnappedImage(editedImageURL) {
     divisor.style.backgroundImage = `url(${editedImageURL})`;
@@ -81,7 +89,7 @@ uploadInput?.addEventListener('change', async (event) => {
     saveProjectButton.classList.add('hidden');
     const originalImageURL = URL.createObjectURL(file);
     originalBlob = await fetch(originalImageURL).then((res) => res.blob()); // Save uploaded image blob
-    setupOriginalImage(originalImageURL, document.querySelector('#comparison figure'));
+    await setupOriginalImage(originalImageURL, document.querySelector('#comparison figure'));
 
     const img = new Image();
     img.onload = () => {
@@ -124,6 +132,7 @@ saveProjectButton?.addEventListener('click', async () => {
 snapButton?.addEventListener('click', snapButtonClick);
 
 function snapButtonClick() {
+    console.log("snap");
     const userGridSize = parseInt(gridSizeInput.value, 10) || estimatedGridSize;
     snapToGrid(userGridSize);
     // Show buttons only after snapping
@@ -154,32 +163,34 @@ slider?.addEventListener('input', () =>  {
 
 
 // SET UP EDITOR AFTER 'OPEN PROJECT' IN GALLERY IS CLICKED AND ENDPOINT REDIRECTS
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const editorMain = document.getElementById('editor');
     if (editorMain) {
         const projectId = editorMain.dataset.projectId;
         const originalImageFilename = editorMain.dataset.originalImage;
         const gridSize = editorMain.dataset.gridSize;
-        console.log({projectId, originalImageFilename, gridSize})
+
         if (projectId && originalImageFilename) {
-            const imagePath = `/gallery/image/${originalImageFilename}`; // fetch image from backend
-            // Use image setup function (same as for uploaded inputs)
-            setupOriginalImage(imagePath, document.querySelector('#comparison figure'));
-            const img = new Image();
-            img.onload = () => {
-                controls.classList.remove('hidden'); // Show grid controls
-                comparison.classList.remove('hidden'); // Show comparison block
-                snapButton.classList.remove('hidden'); // Show snap button
-                // populateGridValue(img, gridSize); 
+            const imagePath = `/gallery/image/${originalImageFilename}`;
+
+            try {
+                // Wait for the image to load
+                await setupOriginalImage(imagePath, document.querySelector('#comparison figure'));
+
+                // Proceed only after the image is ready
+                controls.classList.remove('hidden');
+                comparison.classList.remove('hidden');
+                snapButton.classList.remove('hidden');
+
+                // Populate grid size and trigger snapping
                 gridSizeInput.value = gridSize;
                 snapButtonClick();
-
-            };
-            img.src = imagePath;
+            } catch (error) {
+                console.error("Error during editor setup:", error);
+            }
         }
     }
 });
-
 
 
 
@@ -334,18 +345,14 @@ function colorsAreDifferent(color1, color2, tolerance) {
 
 function snapToGrid(gridSize) {
     console.log("Snapping to grid with size:", gridSize, "and tolerance: 30");
-
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-
     const img = new Image();
     img.src = document.querySelector('#comparison figure').style.backgroundImage.slice(5, -2);
-
     img.onload = async () => {
         canvas.width = img.width;
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
-
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
         const width = canvas.width;
