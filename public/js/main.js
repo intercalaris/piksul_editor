@@ -81,10 +81,9 @@ uploadInput?.addEventListener('change', async (event) => {
     const file = event.target.files[0];
     if (!file) return;
     originalFileName = file.name.split('.')[0];
-    projectId = null; // Reset project ID TODO, CHECK IF DELETE
-    editedImageURL = null; // Reset snapped image
-    divisor.style.backgroundImage = ''; // Clear snapped image UI
-    // reset visibility for new uploads
+    projectId = null;
+    editedImageURL = null;
+    divisor.style.backgroundImage = ''; 
     downloadButton.classList.add('hidden');
     saveProjectButton.classList.add('hidden');
     const originalImageURL = URL.createObjectURL(file);
@@ -93,14 +92,13 @@ uploadInput?.addEventListener('change', async (event) => {
 
     const img = new Image();
     img.onload = () => {
-        controls.classList.remove('hidden'); // Show grid controls
-        comparison.classList.remove('hidden'); // Show comparison block
-        snapButton.classList.remove('hidden'); // Show snap button
+        controls.classList.remove('hidden'); 
+        comparison.classList.remove('hidden');
+        snapButton.classList.remove('hidden');
         populateGridValue(img);
     };
     img.src = originalImageURL;
 });
-
 
 
 saveProjectButton?.addEventListener('click', async () => {
@@ -141,7 +139,6 @@ function snapButtonClick() {
 }
 
 
-
 downloadButton?.addEventListener('click', () => {
     if (editedImageURL) {
         const link = document.createElement('a');
@@ -159,10 +156,7 @@ slider?.addEventListener('input', () =>  {
 
 
 
-
-
-
-// SET UP EDITOR AFTER 'OPEN PROJECT' IN GALLERY IS CLICKED AND ENDPOINT REDIRECTS
+// Set up editor after open project is clicked in gallery
 document.addEventListener('DOMContentLoaded', async () => {
     const editorMain = document.getElementById('editor');
     if (editorMain) {
@@ -174,14 +168,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             const imagePath = `/gallery/image/${originalImageFilename}`;
 
             try {
-                // Wait for the image to load
+                // Wait for image to load
                 await setupOriginalImage(imagePath, document.querySelector('#comparison figure'));
-
-                // Proceed only after the image is ready
                 controls.classList.remove('hidden');
                 comparison.classList.remove('hidden');
                 snapButton.classList.remove('hidden');
-
                 // Populate grid size and trigger snapping
                 gridSizeInput.value = gridSize;
                 snapButtonClick();
