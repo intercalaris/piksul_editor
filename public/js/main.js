@@ -16,6 +16,7 @@ let originalImage = null;
 let editedImageURL = null;
 let originalBlob = null;
 let editedBlob = null;
+let projectId = null;
 let originalFileName = ''; 
 let estimatedGridSize = 8;
 let estimatedTolerance = 30;
@@ -142,7 +143,7 @@ async function deleteProject(click) {
     console.log('delete commencing');
     const deleteProjectButton = click.target;
     const project = deleteProjectButton.closest(".project-card");
-    const projectID = project.getAttribute("data-id");
+    projectID = project.getAttribute("data-id");
     try {
         const response = await fetch(`/projects/${projectID}`, {
           method: 'DELETE',
@@ -239,7 +240,8 @@ slider?.addEventListener('input', () =>  {
 document.addEventListener('DOMContentLoaded', async () => {
     const editorMain = document.getElementById('editor');
     if (editorMain) {
-        const projectId = editorMain.dataset.projectId;
+        projectId = editorMain.dataset.projectId;
+        console.log({ projectId });
         const originalImageFilename = editorMain.dataset.originalImage;
         const gridSize = editorMain.dataset.gridSize;
 
@@ -247,12 +249,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             const imagePath = `/gallery/image/${originalImageFilename}`;
 
             try {
-                // Wait for image to load
+                // Fetch the original image as a blob
+                const response = await fetch(imagePath);
+                if (!response.ok) {
+                    throw new Error("Failed to fetch original image");
+                }
+                originalBlob = await response.blob(); // Update originalBlob
+
+                // Load the image into the editor
                 await setupOriginalImage(imagePath, document.querySelector('#comparison figure'));
                 controls.classList.remove('hidden');
                 comparison.classList.remove('hidden');
                 snapButton.classList.remove('hidden');
-                // Populate grid size and trigger snapping
+
+                // Populate grid size
                 gridSizeInput.value = gridSize;
                 snapButtonClick();
             } catch (error) {
@@ -261,6 +271,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 });
+
 
 
 
