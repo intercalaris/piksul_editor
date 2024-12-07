@@ -57,7 +57,6 @@ function calculateColorChanges(img) {
     return changes;
 }
 
-// Function to draw color change map
 function drawColorChangeMap(img, changes) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -71,8 +70,9 @@ function drawColorChangeMap(img, changes) {
     });
 
     const overlay = document.querySelector('#comparison figure');
-    overlay.style.backgroundImage = `url(${canvas.toDataURL()})`;
+    overlay.style.backgroundImage = `url(${canvas.toDataURL()})`; // Just update display
 }
+
 
 // Toggle button event listener
 toggleColorChangeMapButton?.addEventListener('click', async () => {
@@ -418,7 +418,10 @@ function snapToGrid(gridSize) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
-    img.src = document.querySelector('#comparison figure').style.backgroundImage.slice(5, -2);
+
+    // Always use the saved original image URL
+    img.src = originalImageURL;
+
     img.onload = async () => {
         canvas.width = img.width;
         canvas.height = img.height;
@@ -427,6 +430,7 @@ function snapToGrid(gridSize) {
         const data = imageData.data;
         const width = canvas.width;
         const height = canvas.height;
+
         for (let y = 0; y < height; y += gridSize) {
             for (let x = 0; x < width; x += gridSize) {
                 const centerX = Math.min(x + Math.floor(gridSize / 2), width - 1);
@@ -452,9 +456,11 @@ function snapToGrid(gridSize) {
                 }
             }
         }
+
         ctx.putImageData(imageData, 0, 0);
         editedImageURL = canvas.toDataURL('image/png');
         editedBlob = await fetch(editedImageURL).then((res) => res.blob());
-        setupSnappedImage(editedImageURL); 
+        setupSnappedImage(editedImageURL);
     };
 }
+
