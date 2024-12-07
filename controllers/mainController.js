@@ -9,7 +9,7 @@ module.exports = {
 
   getEditor: (req, res) => {
     res.render('editor.ejs', { 
-      project: { id: '', original_image: '', grid_size: '' } 
+      project: { id: '', original_image: '', block_size: '' } 
     });
   },
 
@@ -52,7 +52,7 @@ module.exports = {
         id: project.id,
         original_image: project.original_image,
         edited_image: project.edited_image,
-        grid_size: project.grid_size,
+        block_size: project.block_size,
         tolerance: project.tolerance,
         created_at: project.created_at,
       }));
@@ -83,7 +83,7 @@ module.exports = {
   },
 
   createOrUpdateProject: async (req, res) => {
-    const { grid_size, tolerance, project_id } = req.body;
+    const { block_size, tolerance, project_id } = req.body;
     const originalImage = req.files.original_image[0];
     const editedImage = req.files.edited_image[0];
     const userId = req.user ? req.user.id : null; // Set userId to null if guest
@@ -92,13 +92,13 @@ module.exports = {
       if (project_id) {
         // Update existing project
         const { originalImagePath, editedImagePath } = await ProjectModel.saveImages(project_id, originalImage, editedImage);
-        await ProjectModel.updateProject(project_id, originalImagePath, editedImagePath, grid_size, tolerance);
+        await ProjectModel.updateProject(project_id, originalImagePath, editedImagePath, block_size, tolerance);
         res.json({ project_id, message: "Project updated successfully" });
       } else {
         // Insert a new project
-        const newProjectId = await ProjectModel.insertProject(grid_size, tolerance, userId);
+        const newProjectId = await ProjectModel.insertProject(block_size, tolerance, userId);
         const { originalImagePath, editedImagePath } = await ProjectModel.saveImages(newProjectId, originalImage, editedImage);
-        await ProjectModel.updateProject(newProjectId, originalImagePath, editedImagePath, grid_size, tolerance);
+        await ProjectModel.updateProject(newProjectId, originalImagePath, editedImagePath, block_size, tolerance);
         res.json({ project_id: newProjectId, message: "Project saved successfully" });
       }
     } catch (err) {
@@ -140,7 +140,7 @@ module.exports = {
         id: project.id,
         original_image: project.original_image,
         edited_image: project.edited_image,
-        grid_size: project.grid_size,
+        block_size: project.block_size,
         tolerance: project.tolerance,
         created_at: project.created_at,
       }));

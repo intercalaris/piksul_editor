@@ -12,11 +12,11 @@ const saveImages = async (id, originalImage, editedImage) => {
 };
 
 // Insert new project
-const insertProject = async (gridSize, tolerance, userId = null) => {
+const insertProject = async (blockSize, tolerance, userId = null) => {
   return new Promise((resolve, reject) => {
     db.run(
-      `INSERT INTO projects (user_id, original_image, edited_image, grid_size, tolerance) VALUES (?, ?, ?, ?, ?)`,
-      [userId, "placeholder", "placeholder", parseInt(gridSize, 10), parseInt(tolerance, 10)],
+      `INSERT INTO projects (user_id, original_image, edited_image, block_size, tolerance) VALUES (?, ?, ?, ?, ?)`,
+      [userId, "placeholder", "placeholder", parseInt(blockSize, 10), parseInt(tolerance, 10)],
       function (err) {
         if (err) return reject(err);
         resolve(this.lastID); // Return new project ID
@@ -26,13 +26,13 @@ const insertProject = async (gridSize, tolerance, userId = null) => {
 };
 
 // Update existing project
-const updateProject = async (id, originalImagePath, editedImagePath, gridSize, tolerance) => {
+const updateProject = async (id, originalImagePath, editedImagePath, blockSize, tolerance) => {
   return new Promise((resolve, reject) => {
     db.run(
       `UPDATE projects 
-       SET original_image = ?, edited_image = ?, grid_size = ?, tolerance = ?, created_at = CURRENT_TIMESTAMP 
+       SET original_image = ?, edited_image = ?, block_size = ?, tolerance = ?, created_at = CURRENT_TIMESTAMP 
        WHERE id = ?`,
-      [path.basename(originalImagePath), path.basename(editedImagePath), parseInt(gridSize, 10), parseInt(tolerance, 10), id],
+      [path.basename(originalImagePath), path.basename(editedImagePath), parseInt(blockSize, 10), parseInt(tolerance, 10), id],
       (err) => {
         if (err) return reject(err);
         resolve();

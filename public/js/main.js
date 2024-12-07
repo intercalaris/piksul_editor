@@ -1,7 +1,7 @@
 const uploadInput = document.getElementById('upload');
 const snapButton = document.getElementById('snapButton');
 const downloadButton = document.getElementById('downloadButton');
-const gridSizeInput = document.getElementById('gridSizeInput');
+const blockSizeInput = document.getElementById('blockSizeInput');
 // const toleranceInput = document.getElementById('toleranceInput');
 const controls = document.getElementById('controls');
 const divisor = document.getElementById('divisor');
@@ -18,7 +18,7 @@ let originalBlob = null;
 let editedBlob = null;
 let projectId = null;
 let originalFileName = ''; 
-let estimatedGridSize = 8;
+let estimatedBlockSize = 8;
 let estimatedTolerance = 30;
 
 const toggleColorChangeMapButton = document.getElementById('toggleColorChangeMapButton');
@@ -132,11 +132,11 @@ function setupSnappedImage(editedImageURL) {
     console.log("Snapped image setup complete.");
 }
 
-function populateGridValue(img) {
-    const gridSize = estimateGridSize(img);
-    gridSizeInput.value = gridSize;
-    console.log("Estimated grid size:", gridSize);
-    return gridSize;
+function populateBlockValue(img) {
+    const blockSize = estimateBlockSize(img);
+    blockSizeInput.value = blockSize;
+    console.log("Estimated block size:", blockSize);
+    return blockSize;
 }
 
 async function deleteProject(click) {
@@ -175,7 +175,7 @@ uploadInput?.addEventListener('change', async (event) => {
         controls.classList.remove('hidden'); 
         comparison.classList.remove('hidden');
         snapButton.classList.remove('hidden');
-        populateGridValue(img);
+        populateBlockValue(img);
     };
     img.src = originalImageURL;
 });
@@ -185,7 +185,7 @@ saveProjectButton?.addEventListener('click', async () => {
     const formData = new FormData();
     formData.append('original_image', new File([originalBlob], 'original.png'));
     formData.append('edited_image', new File([editedBlob], 'edited.png'));
-    formData.append('grid_size', gridSizeInput.value);
+    formData.append('block_size', blockSizeInput.value);
     if (projectId) formData.append('project_id', projectId);
     try {
         const response = await fetch('/projects', {
@@ -211,8 +211,8 @@ snapButton?.addEventListener('click', snapButtonClick);
 
 function snapButtonClick() {
     console.log("snap");
-    const userGridSize = parseInt(gridSizeInput.value, 10) || estimatedGridSize;
-    snapToGrid(userGridSize);
+    const userBlockSize = parseInt(blockSizeInput.value, 10) || estimatedBlockSize;
+    snapToBlock(userBlockSize);
     // Show buttons only after snapping
     downloadButton.classList.remove('hidden');
     saveProjectButton.classList.remove('hidden');
@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         projectId = editorMain.dataset.projectId;
         console.log({ projectId });
         const originalImageFilename = editorMain.dataset.originalImage;
-        const gridSize = editorMain.dataset.gridSize;
+        const blockSize = editorMain.dataset.blockSize;
 
         if (projectId && originalImageFilename) {
             const imagePath = `/gallery/image/${originalImageFilename}`;
@@ -262,8 +262,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 comparison.classList.remove('hidden');
                 snapButton.classList.remove('hidden');
 
-                // Populate grid size
-                gridSizeInput.value = gridSize;
+                // Populate block size
+                blockSizeInput.value = blockSize;
                 snapButtonClick();
             } catch (error) {
                 console.error("Error during editor setup:", error);
@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 // CALCULATIONS
-function estimateGridSize(img) {
+function estimateBlockSize(img) {
     const tolerance = 30;
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -334,8 +334,8 @@ function estimateGridSize(img) {
     return topCandidates[bestCandidateIndex];
 }
 
-function evaluateSnapping(img, gridSize) {
-    console.log(`Evaluating snapping quality for grid size: ${gridSize}`);
+function evaluateSnapping(img, blockSize) {
+    console.log(`Evaluating snapping quality for block size: ${blockSize}`);
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = img.width;
@@ -349,11 +349,11 @@ function evaluateSnapping(img, gridSize) {
 
     let totalDeviation = 0;
 
-    // Loop through each grid cell
-    for (let y = 0; y < height; y += gridSize) {
-        for (let x = 0; x < width; x += gridSize) {
-            const centerX = Math.min(x + Math.floor(gridSize / 2), width - 1);
-            const centerY = Math.min(y + Math.floor(gridSize / 2), height - 1);
+    // Loop through each block cell
+    for (let y = 0; y < height; y += blockSize) {
+        for (let x = 0; x < width; x += blockSize) {
+            const centerX = Math.min(x + Math.floor(blockSize / 2), width - 1);
+            const centerY = Math.min(y + Math.floor(blockSize / 2), height - 1);
             const index = (centerY * width + centerX) * 4;
             const r = data[index];
             const g = data[index + 1];
@@ -365,9 +365,9 @@ function evaluateSnapping(img, gridSize) {
             let colorSumR = 0, colorSumG = 0, colorSumB = 0;
             let colorValues = [];
 
-            // Calculate deviation for each pixel in the grid cell from the sampled color
-            for (let offsetY = 0; offsetY < gridSize; offsetY++) {
-                for (let offsetX = 0; offsetX < gridSize; offsetX++) {
+            // Calculate deviation for each pixel in the block cell from the sampled color
+            for (let offsetY = 0; offsetY < blockSize; offsetY++) {
+                for (let offsetX = 0; offsetX < blockSize; offsetX++) {
                     const pixelX = x + offsetX;
                     const pixelY = y + offsetY;
                     if (pixelX < width && pixelY < height) {
@@ -411,7 +411,7 @@ function evaluateSnapping(img, gridSize) {
         }
     }
 
-    console.log(`Total deviation for grid size ${gridSize}: ${totalDeviation}`);
+    console.log(`Total deviation for block size ${blockSize}: ${totalDeviation}`);
     return totalDeviation;
 }
 
@@ -424,8 +424,8 @@ function colorsAreDifferent(color1, color2, tolerance) {
 }
 
 
-function snapToGrid(gridSize) {
-    console.log("Snapping to grid with size:", gridSize, "and tolerance: 30");
+function snapToBlock(blockSize) {
+    console.log("Snapping to Grid with size:", blockSize, "and tolerance: 30");
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
@@ -442,18 +442,18 @@ function snapToGrid(gridSize) {
         const width = canvas.width;
         const height = canvas.height;
 
-        for (let y = 0; y < height; y += gridSize) {
-            for (let x = 0; x < width; x += gridSize) {
-                const centerX = Math.min(x + Math.floor(gridSize / 2), width - 1);
-                const centerY = Math.min(y + Math.floor(gridSize / 2), height - 1);
+        for (let y = 0; y < height; y += blockSize) {
+            for (let x = 0; x < width; x += blockSize) {
+                const centerX = Math.min(x + Math.floor(blockSize / 2), width - 1);
+                const centerY = Math.min(y + Math.floor(blockSize / 2), height - 1);
                 const index = (centerY * width + centerX) * 4;
                 const r = data[index];
                 const g = data[index + 1];
                 const b = data[index + 2];
                 const a = data[index + 3];
 
-                for (let offsetY = 0; offsetY < gridSize; offsetY++) {
-                    for (let offsetX = 0; offsetX < gridSize; offsetX++) {
+                for (let offsetY = 0; offsetY < blockSize; offsetY++) {
+                    for (let offsetX = 0; offsetX < blockSize; offsetX++) {
                         const pixelX = x + offsetX;
                         const pixelY = y + offsetY;
                         if (pixelX < width && pixelY < height) {

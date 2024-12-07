@@ -31,7 +31,7 @@ function initDB() {
       user_id INTEGER,
       original_image TEXT,
       edited_image TEXT,
-      grid_size INTEGER,
+      block_size INTEGER,
       tolerance INTEGER,
       is_public BOOLEAN DEFAULT 0, -- 0 for private, 1 for public
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
