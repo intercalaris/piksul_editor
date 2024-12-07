@@ -12,7 +12,6 @@ const saveProjectButton = document.getElementById('saveProjectButton');
 const openProjectButtons = document.querySelectorAll('.open-project');
 const deleteProjectButtons = document.querySelectorAll('.delete-project');
 const viewSavedProjectsButton = document.getElementById('viewSavedProjectsButton');
-
 let originalImage = null;
 let editedImageURL = null;
 let originalBlob = null;
@@ -21,6 +20,84 @@ let originalFileName = '';
 let estimatedGridSize = 8;
 let estimatedTolerance = 30;
 
+const toggleColorChangeMapButton = document.getElementById('toggleColorChangeMapButton');
+let isColorChangeMapVisible = false;
+let colorChangePositions = [];
+
+// Function to calculate color change positions
+function calculateColorChanges(img) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    const width = canvas.width;
+    const height = canvas.height;
+    const changes = [];
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const index = (y * width + x) * 4;
+            if (x > 0) {
+                const prevIndex = (y * width + x - 1) * 4;
+                if (colorsAreDifferent(data.slice(index, index + 3), data.slice(prevIndex, prevIndex + 3), estimatedTolerance)) {
+                    changes.push({ x, y });
+                }
+            }
+            if (y > 0) {
+                const prevIndex = ((y - 1) * width + x) * 4;
+                if (colorsAreDifferent(data.slice(index, index + 3), data.slice(prevIndex, prevIndex + 3), estimatedTolerance)) {
+                    changes.push({ x, y });
+                }
+            }
+        }
+    }
+    return changes;
+}
+
+// Function to draw color change map
+function drawColorChangeMap(img, changes) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+
+    ctx.fillStyle = 'red';
+    changes.forEach(({ x, y }) => {
+        ctx.fillRect(x, y, 1, 1); // Mark each pixel as red
+    });
+
+    const overlay = document.querySelector('#comparison figure');
+    overlay.style.backgroundImage = `url(${canvas.toDataURL()})`;
+}
+
+// Toggle button event listener
+toggleColorChangeMapButton?.addEventListener('click', async () => {
+    const overlay = document.querySelector('#comparison figure');
+    if (!isColorChangeMapVisible) {
+        // Show the color change map
+        const img = new Image();
+        img.src = originalImageURL; // Use saved original URL
+        img.onload = () => {
+            if (!colorChangePositions.length) {
+                colorChangePositions = calculateColorChanges(img);
+            }
+            drawColorChangeMap(img, colorChangePositions);
+            toggleColorChangeMapButton.textContent = "Hide Color Change Map";
+            isColorChangeMapVisible = true;
+        };
+    } else {
+        // Hide color change map and restore original image
+        overlay.style.backgroundImage = `url(${originalImageURL})`;
+        toggleColorChangeMapButton.textContent = "Show Color Change Map";
+        isColorChangeMapVisible = false;
+    }
+});
+
+
 function setupOriginalImage(url, imgElement) {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -28,6 +105,7 @@ function setupOriginalImage(url, imgElement) {
             const aspectRatio = img.width / img.height;
             comparison.style.aspectRatio = `${aspectRatio}`;
             imgElement.style.backgroundImage = `url(${url})`;
+            originalImageURL = url; // Save the original image URL
             console.log("Original image loaded successfully.");
             resolve(); 
         };
@@ -35,9 +113,10 @@ function setupOriginalImage(url, imgElement) {
             console.error("Error loading image:", url);
             reject(new Error("Failed to load image")); 
         };
-        img.src = url; //start image load
+        img.src = url; // Start image load
     });
 }
+
 
 
 function setupSnappedImage(editedImageURL) {
