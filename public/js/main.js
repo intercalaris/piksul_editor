@@ -27,7 +27,6 @@ const toggleColorChangeMapButton = document.getElementById('toggleColorChangeMap
 let isColorChangeMapVisible = false;
 let colorChangePositions = [];
 
-// Function to calculate color change positions
 function calculateColorChanges(img) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -76,7 +75,6 @@ function drawColorChangeMap(img, changes) {
     overlay.style.backgroundImage = `url(${canvas.toDataURL()})`; // Just update display
 }
 
-
 toggleColorChangeMapButton?.addEventListener('click', async () => {
     const overlay = document.querySelector('#comparison figure');
     if (!isColorChangeMapVisible) {
@@ -99,7 +97,6 @@ toggleColorChangeMapButton?.addEventListener('click', async () => {
     }
 });
 
-
 function setupOriginalImage(url, imgElement) {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -118,7 +115,6 @@ function setupOriginalImage(url, imgElement) {
         img.src = url; // Start image load
     });
 }
-
 
 function setupSnappedImage(editedImageURL) {
     divisor.style.backgroundImage = `url(${editedImageURL})`;
@@ -187,8 +183,6 @@ uploadInput?.addEventListener('change', async (event) => {
     img.src = originalImageURL;
 });
 
-
-
 saveProjectButton?.addEventListener('click', async () => {
     const formData = new FormData();
     formData.append('original_image', new File([originalBlob], 'original.png'));
@@ -230,7 +224,6 @@ async function snapButtonClick() {
     }
 }
 
-
 uploadInput?.addEventListener('change', async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -242,8 +235,6 @@ uploadInput?.addEventListener('change', async (event) => {
     originalImageURL = URL.createObjectURL(file);
     await setupOriginalImage(originalImageURL, document.querySelector('#comparison figure'));
 });
-
-
 
 downloadButton?.addEventListener('click', () => {
     if (editedImageURL) {
@@ -259,8 +250,6 @@ openProjectButtons?.forEach(button => button.addEventListener("click", openProje
 slider?.addEventListener('input', () =>  {
     divisor.style.width = slider.value + "%";
 });
-
-
 
 // Set up editor after open project is clicked in gallery
 document.addEventListener('DOMContentLoaded', async () => {
@@ -317,8 +306,6 @@ function paletteSizeChange() {
         applyQuantizationToImage(paletteSize);
     }
 }
-
-
 
 
 
@@ -527,15 +514,13 @@ function snapToGrid(blockSize) {
     });
 }
 
-
-
 function applyQuantizationToImage(paletteSize) {
     if (!snappedImageURL) {
         console.error("Snapped image not available. Please snap the image to the grid first.");
         return;
     }
     const img = new Image();
-    img.src = snappedImageURL; // Use the unaltered snapped image
+    img.src = snappedImageURL; // Use unaltered snapped image
     img.onload = async () => {
         console.log("Quantization started with snapped image.");
         const canvas = document.createElement("canvas");
@@ -545,17 +530,13 @@ function applyQuantizationToImage(paletteSize) {
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         console.log(`Canvas dimensions: ${canvas.width}x${canvas.height}`);
-        console.log("Image data sample:", imageData.data.slice(0, 20)); // Check the first few pixels
 
         try {
             const rgbQuant = new RgbQuant({ colors: paletteSize });
             console.log("Sampling image data for quantization...");
             rgbQuant.sample(imageData.data);
             const reducedData = rgbQuant.reduce(imageData.data, 2); // Request palette-indexed array
-            const palette = rgbQuant.palette(true); // Get the palette as RGB triplets
-            console.log("Reduced data length:", reducedData.length);
-            console.log("Generated palette length:", palette.length);
-            console.log("Generated palette:", palette);
+            const palette = rgbQuant.palette(true); // Get palette as RGB triplets
 
             if (!palette || palette.length === 0) {
                 console.error("RgbQuant failed to generate a palette.");
@@ -565,7 +546,7 @@ function applyQuantizationToImage(paletteSize) {
             for (let i = 0; i < reducedData.length; i++) {
                 const paletteIndex = reducedData[i];
                 const offset = i * 4;
-                const alpha = imageData.data[offset + 3]; // Preserve original alpha channel
+                const alpha = imageData.data[offset + 3]; // Preserve alpha
 
                 if (alpha === 0) {
                     reducedImageData.data[offset] = 0;
@@ -579,16 +560,15 @@ function applyQuantizationToImage(paletteSize) {
                     reducedImageData.data[offset + 2] = color[2]; // Blue
                     reducedImageData.data[offset + 3] = 255; // Fully opaque
                 } else {
-                    console.error(`Invalid palette index: ${paletteIndex} at position ${i}`);
                     reducedImageData.data[offset] = reducedImageData.data[offset + 1] = reducedImageData.data[offset + 2] = 0;
-                    reducedImageData.data[offset + 3] = 255; // Opaque black as fallback
+                    reducedImageData.data[offset + 3] = 255; 
                 }
             }
 
             ctx.putImageData(reducedImageData, 0, 0);
             editedImageURL = canvas.toDataURL("image/png"); // Update the quantized image URL
 
-            // Update `editedBlob` after quantization
+            // Update editedBlob after quantization
             editedBlob = await fetch(editedImageURL).then((res) => res.blob());
             setupSnappedImage(editedImageURL);
             console.log(`Image quantized to ${paletteSize} colors.`);
