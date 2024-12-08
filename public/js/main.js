@@ -160,12 +160,19 @@ async function deleteProject(click) {
 uploadInput?.addEventListener('change', async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+
+    // Reset states
     originalFileName = file.name.split('.')[0];
     projectId = null;
     editedImageURL = null;
+    isColorChangeMapVisible = false; 
+    toggleColorChangeMapButton.textContent = "Show Color Change Map"; 
+    colorChangePositions = [];
     divisor.style.backgroundImage = ''; 
     downloadButton.classList.add('hidden');
     saveProjectButton.classList.add('hidden');
+
+    // Load new image
     const originalImageURL = URL.createObjectURL(file);
     originalBlob = await fetch(originalImageURL).then((res) => res.blob()); // Save uploaded image blob
     await setupOriginalImage(originalImageURL, document.querySelector('#comparison figure'));
@@ -179,6 +186,7 @@ uploadInput?.addEventListener('change', async (event) => {
     };
     img.src = originalImageURL;
 });
+
 
 
 saveProjectButton?.addEventListener('click', async () => {
