@@ -15,7 +15,7 @@ const saveImages = async (id, originalImage, editedImage) => {
 const insertProject = async (blockSize, paletteSize, tolerance, userId = null) => {
   return new Promise((resolve, reject) => {
     db.run(
-      `INSERT INTO projects (user_id, original_image, edited_image, block_size, palette_size, tolerance) VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO projects (user_id, original_image, edited_image, block_size, palette_size, tolerance) VALUES (?, ?, ?, ?, ?, ?)`,
       [userId, "placeholder", "placeholder", parseInt(blockSize, 10), parseInt(paletteSize, 10), parseInt(tolerance, 10)],
       function (err) {
         if (err) return reject(err);

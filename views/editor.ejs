@@ -19,7 +19,8 @@
   <main id="editor" 
     data-project-id="<%= project.id || '' %>" 
     data-original-image="<%= project.original_image || '' %>" 
-    data-block-size="<%= project.block_size || '' %>">
+    data-block-size="<%= project.block_size || '' %>"
+    data-palette-size="<%= project?.palette_size || '' %>">
 
     <div class="action-buttons">
       <a href="/gallery" class="button view-projects"><span>Public Projects</span></a>
@@ -35,14 +36,15 @@
     <div id="palette-controls">
       <label for="paletteSizeSelect">Palette Size: </label>
       <select id="paletteSizeSelect">
-        <option value="" selected>None</option>
-        <option value="16">16 Colors</option>
-        <option value="32">32 Colors</option>
-        <option value="64">64 Colors</option>
-        <option value="128">128 Colors</option>
-        <option value="256">256 Colors</option>
+        <option value="" <%= project.palette_size ? "" : "selected" %>>None</option>
+        <option value="16" <%= project.palette_size == 16 ? "selected" : "" %>>16 Colors</option>
+        <option value="32" <%= project.palette_size == 32 ? "selected" : "" %>>32 Colors</option>
+        <option value="64" <%= project.palette_size == 64 ? "selected" : "" %>>64 Colors</option>
+        <option value="128" <%= project.palette_size == 128 ? "selected" : "" %>>128 Colors</option>
+        <option value="256" <%= project.palette_size == 256 ? "selected" : "" %>>256 Colors</option>
       </select>
     </div>
+    
 
     <a class="button" id="toggleColorChangeMapButton">Show Color Change Map</a>
     <a class="button hidden" id="snapButton">Snap to Grid</a>

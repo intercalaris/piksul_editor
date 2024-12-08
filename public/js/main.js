@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.log({ projectId });
         const originalImageFilename = editorMain.dataset.originalImage;
         const blockSize = editorMain.dataset.blockSize;
-
+        const paletteSize = editorMain.dataset.paletteSize;
         if (projectId && originalImageFilename) {
             const imagePath = `/gallery/image/${originalImageFilename}`;
 
@@ -290,6 +290,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // Populate block size
                 blockSizeInput.value = blockSize;
+                paletteSizeSelect.value = paletteSize
                 snapButtonClick();
             } catch (error) {
                 console.error("Error during editor setup:", error);
