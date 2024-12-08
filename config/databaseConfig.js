@@ -32,6 +32,7 @@ function initDB() {
       original_image TEXT,
       edited_image TEXT,
       block_size INTEGER,
+      palette_size INTEGER,
       tolerance INTEGER,
       is_public BOOLEAN DEFAULT 0, -- 0 for private, 1 for public
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

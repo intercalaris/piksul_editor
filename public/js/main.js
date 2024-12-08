@@ -194,6 +194,7 @@ saveProjectButton?.addEventListener('click', async () => {
     formData.append('original_image', new File([originalBlob], 'original.png'));
     formData.append('edited_image', new File([editedBlob], 'edited.png'));
     formData.append('block_size', blockSizeInput.value);
+    formData.append('palette_size', paletteSizeSelect.value);
     if (projectId) formData.append('project_id', projectId);
     try {
         const response = await fetch('/projects', {
@@ -217,18 +218,19 @@ saveProjectButton?.addEventListener('click', async () => {
 
 snapButton?.addEventListener('click', snapButtonClick);
 
-function snapButtonClick() {
-    console.log("snap");
+async function snapButtonClick() {
     const userBlockSize = parseInt(blockSizeInput.value, 10) || estimatedBlockSize;
-    snapToGrid(userBlockSize);
-    // Apply color quantization if a palette size is selected
-    const paletteSize = getSelectedPaletteSize();
-    if (paletteSize) {
-        applyQuantizationToImage(paletteSize);
+    try {
+        await snapToGrid(userBlockSize); // wait for snapping before applying palette size
+        paletteSizeChange();
+        downloadButton.classList.remove('hidden');
+        saveProjectButton.classList.remove('hidden');
+    } catch (error) {
+        console.error("Error during snapping or palette size change:", error);
     }
-    downloadButton.classList.remove('hidden');
-    saveProjectButton.classList.remove('hidden');
 }
+
+
 uploadInput?.addEventListener('change', async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -296,34 +298,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+paletteSizeSelect?.addEventListener('change', paletteSizeChange);
 
-
-paletteSizeSelect?.addEventListener('change', () => {
-    const paletteSize = getSelectedPaletteSize();
-    if (paletteSize === null) {
-        // Reset to snapped image if "None" is selected
+function paletteSizeChange() {
+    const paletteSize = parseInt(paletteSizeSelect.value, 10);
+    if (isNaN(paletteSize)) {
+        // "None" selected, reset to regular snapped image
         if (snappedImageURL) {
             editedImageURL = snappedImageURL;
             setupSnappedImage(editedImageURL);
             console.log("Palette reset to snapped image.");
+        } else {
+            console.warn("No snapped image to reset to.");
         }
     } else {
-        // Apply quantization for a valid palette size
+        // Quantize palette size
         applyQuantizationToImage(paletteSize);
     }
-});
-
-function getSelectedPaletteSize() {
-    const selectedValue = paletteSizeSelect.value;
-    if (selectedValue === "none") return null;
-    if (selectedValue === "custom") {
-        const customSize = parseInt(customPaletteSizeInput.value, 10);
-        return !isNaN(customSize) && customSize > 0 ? customSize : null;
-    }
-    return selectedValue ? parseInt(selectedValue, 10) : null;
 }
-
-
 
 
 
@@ -478,67 +470,77 @@ function snapToGrid(blockSize) {
     const ctx = canvas.getContext('2d');
     const img = new Image();
 
-    img.src = originalImageURL; // Always start from the original image
+    return new Promise((resolve, reject) => {
+        img.src = originalImageURL; // Always start from the original image
 
-    img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
+        img.onload = async () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
 
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        const width = canvas.width;
-        const height = canvas.height;
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const width = canvas.width;
+            const height = canvas.height;
 
-        for (let y = 0; y < height; y += blockSize) {
-            for (let x = 0; x < width; x += blockSize) {
-                const centerX = Math.min(x + Math.floor(blockSize / 2), width - 1);
-                const centerY = Math.min(y + Math.floor(blockSize / 2), height - 1);
-                const index = (centerY * width + centerX) * 4;
-                const r = data[index];
-                const g = data[index + 1];
-                const b = data[index + 2];
-                const a = data[index + 3];
+            for (let y = 0; y < height; y += blockSize) {
+                for (let x = 0; x < width; x += blockSize) {
+                    const centerX = Math.min(x + Math.floor(blockSize / 2), width - 1);
+                    const centerY = Math.min(y + Math.floor(blockSize / 2), height - 1);
+                    const index = (centerY * width + centerX) * 4;
+                    const r = data[index];
+                    const g = data[index + 1];
+                    const b = data[index + 2];
+                    const a = data[index + 3];
 
-                for (let offsetY = 0; offsetY < blockSize; offsetY++) {
-                    for (let offsetX = 0; offsetX < blockSize; offsetX++) {
-                        const pixelX = x + offsetX;
-                        const pixelY = y + offsetY;
-                        if (pixelX < width && pixelY < height) {
-                            const newIndex = (pixelY * width + pixelX) * 4;
-                            data[newIndex] = r;
-                            data[newIndex + 1] = g;
-                            data[newIndex + 2] = b;
-                            data[newIndex + 3] = a;
+                    for (let offsetY = 0; offsetY < blockSize; offsetY++) {
+                        for (let offsetX = 0; offsetX < blockSize; offsetX++) {
+                            const pixelX = x + offsetX;
+                            const pixelY = y + offsetY;
+                            if (pixelX < width && pixelY < height) {
+                                const newIndex = (pixelY * width + pixelX) * 4;
+                                data[newIndex] = r;
+                                data[newIndex + 1] = g;
+                                data[newIndex + 2] = b;
+                                data[newIndex + 3] = a;
+                            }
                         }
                     }
                 }
             }
-        }
 
-        ctx.putImageData(imageData, 0, 0);
-        snappedImageURL = canvas.toDataURL('image/png'); // Save snapped image URL
-        editedImageURL = snappedImageURL; // Start with snapped image for display
-        setupSnappedImage(editedImageURL);
-    };
+            ctx.putImageData(imageData, 0, 0);
+            snappedImageURL = canvas.toDataURL('image/png'); // Save snapped image URL
+            editedImageURL = snappedImageURL; // Start with snapped image for display
+
+            // Update `editedBlob` after snapping
+            editedBlob = await fetch(editedImageURL).then((res) => res.blob());
+            setupSnappedImage(editedImageURL);
+            resolve(); // Resolve the Promise after snapping is complete
+        };
+
+        img.onerror = () => {
+            console.error("Failed to load the original image for snapping.");
+            reject(new Error("Failed to load the original image for snapping."));
+        };
+    });
 }
+
+
 
 function applyQuantizationToImage(paletteSize) {
     if (!snappedImageURL) {
         console.error("Snapped image not available. Please snap the image to the grid first.");
         return;
     }
-
     const img = new Image();
     img.src = snappedImageURL; // Use the unaltered snapped image
-
-    img.onload = () => {
+    img.onload = async () => {
         console.log("Quantization started with snapped image.");
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         canvas.width = img.width;
         canvas.height = img.height;
-
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         console.log(`Canvas dimensions: ${canvas.width}x${canvas.height}`);
@@ -548,10 +550,8 @@ function applyQuantizationToImage(paletteSize) {
             const rgbQuant = new RgbQuant({ colors: paletteSize });
             console.log("Sampling image data for quantization...");
             rgbQuant.sample(imageData.data);
-
             const reducedData = rgbQuant.reduce(imageData.data, 2); // Request palette-indexed array
             const palette = rgbQuant.palette(true); // Get the palette as RGB triplets
-
             console.log("Reduced data length:", reducedData.length);
             console.log("Generated palette length:", palette.length);
             console.log("Generated palette:", palette);
@@ -560,9 +560,7 @@ function applyQuantizationToImage(paletteSize) {
                 console.error("RgbQuant failed to generate a palette.");
                 return;
             }
-
             const reducedImageData = ctx.createImageData(canvas.width, canvas.height);
-
             for (let i = 0; i < reducedData.length; i++) {
                 const paletteIndex = reducedData[i];
                 const offset = i * 4;
@@ -588,6 +586,9 @@ function applyQuantizationToImage(paletteSize) {
 
             ctx.putImageData(reducedImageData, 0, 0);
             editedImageURL = canvas.toDataURL("image/png"); // Update the quantized image URL
+
+            // Update `editedBlob` after quantization
+            editedBlob = await fetch(editedImageURL).then((res) => res.blob());
             setupSnappedImage(editedImageURL);
             console.log(`Image quantized to ${paletteSize} colors.`);
         } catch (err) {
@@ -597,6 +598,7 @@ function applyQuantizationToImage(paletteSize) {
 
     img.onerror = () => console.error("Failed to load the snapped image for quantization.");
 }
+
 
 
 
