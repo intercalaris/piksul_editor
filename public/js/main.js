@@ -12,7 +12,9 @@ const saveProjectButton = document.getElementById('saveProjectButton');
 const openProjectButtons = document.querySelectorAll('.open-project');
 const deleteProjectButtons = document.querySelectorAll('.delete-project');
 const viewSavedProjectsButton = document.getElementById('viewSavedProjectsButton');
+const paletteSizeSelect = document.getElementById('paletteSizeSelect')
 let originalImage = null;
+let originalImageURL = null;
 let editedImageURL = null;
 let originalBlob = null;
 let editedBlob = null;
@@ -75,7 +77,6 @@ function drawColorChangeMap(img, changes) {
 }
 
 
-// Toggle button event listener
 toggleColorChangeMapButton?.addEventListener('click', async () => {
     const overlay = document.querySelector('#comparison figure');
     if (!isColorChangeMapVisible) {
@@ -117,7 +118,6 @@ function setupOriginalImage(url, imgElement) {
         img.src = url; // Start image load
     });
 }
-
 
 
 function setupSnappedImage(editedImageURL) {
@@ -220,11 +220,27 @@ snapButton?.addEventListener('click', snapButtonClick);
 function snapButtonClick() {
     console.log("snap");
     const userBlockSize = parseInt(blockSizeInput.value, 10) || estimatedBlockSize;
-    snapToBlock(userBlockSize);
-    // Show buttons only after snapping
+    snapToGrid(userBlockSize);
+    // Apply color quantization if a palette size is selected
+    const paletteSize = getSelectedPaletteSize();
+    if (paletteSize) {
+        applyQuantizationToImage(paletteSize);
+    }
     downloadButton.classList.remove('hidden');
     saveProjectButton.classList.remove('hidden');
 }
+uploadInput?.addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    originalFileName = file.name.split('.')[0];
+    editedImageURL = null;
+    colorChangePositions = [];
+    divisor.style.backgroundImage = '';
+    paletteSizeSelect.value = ''; // Reset palette selection
+    originalImageURL = URL.createObjectURL(file);
+    await setupOriginalImage(originalImageURL, document.querySelector('#comparison figure'));
+});
+
 
 
 downloadButton?.addEventListener('click', () => {
@@ -282,7 +298,30 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 
+paletteSizeSelect?.addEventListener('change', () => {
+    const paletteSize = getSelectedPaletteSize();
+    if (paletteSize === null) {
+        // Reset to snapped image if "None" is selected
+        if (snappedImageURL) {
+            editedImageURL = snappedImageURL;
+            setupSnappedImage(editedImageURL);
+            console.log("Palette reset to snapped image.");
+        }
+    } else {
+        // Apply quantization for a valid palette size
+        applyQuantizationToImage(paletteSize);
+    }
+});
 
+function getSelectedPaletteSize() {
+    const selectedValue = paletteSizeSelect.value;
+    if (selectedValue === "none") return null;
+    if (selectedValue === "custom") {
+        const customSize = parseInt(customPaletteSizeInput.value, 10);
+        return !isNaN(customSize) && customSize > 0 ? customSize : null;
+    }
+    return selectedValue ? parseInt(selectedValue, 10) : null;
+}
 
 
 
@@ -431,20 +470,21 @@ function colorsAreDifferent(color1, color2, tolerance) {
     );
 }
 
+let snappedImageURL = null; 
 
-function snapToBlock(blockSize) {
+function snapToGrid(blockSize) {
     console.log("Snapping to Grid with size:", blockSize, "and tolerance: 30");
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
 
-    // Always use the saved original image URL
-    img.src = originalImageURL;
+    img.src = originalImageURL; // Always start from the original image
 
-    img.onload = async () => {
+    img.onload = () => {
         canvas.width = img.width;
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
+
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
         const width = canvas.width;
@@ -477,9 +517,87 @@ function snapToBlock(blockSize) {
         }
 
         ctx.putImageData(imageData, 0, 0);
-        editedImageURL = canvas.toDataURL('image/png');
-        editedBlob = await fetch(editedImageURL).then((res) => res.blob());
+        snappedImageURL = canvas.toDataURL('image/png'); // Save snapped image URL
+        editedImageURL = snappedImageURL; // Start with snapped image for display
         setupSnappedImage(editedImageURL);
     };
 }
+
+function applyQuantizationToImage(paletteSize) {
+    if (!snappedImageURL) {
+        console.error("Snapped image not available. Please snap the image to the grid first.");
+        return;
+    }
+
+    const img = new Image();
+    img.src = snappedImageURL; // Use the unaltered snapped image
+
+    img.onload = () => {
+        console.log("Quantization started with snapped image.");
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        console.log(`Canvas dimensions: ${canvas.width}x${canvas.height}`);
+        console.log("Image data sample:", imageData.data.slice(0, 20)); // Check the first few pixels
+
+        try {
+            const rgbQuant = new RgbQuant({ colors: paletteSize });
+            console.log("Sampling image data for quantization...");
+            rgbQuant.sample(imageData.data);
+
+            const reducedData = rgbQuant.reduce(imageData.data, 2); // Request palette-indexed array
+            const palette = rgbQuant.palette(true); // Get the palette as RGB triplets
+
+            console.log("Reduced data length:", reducedData.length);
+            console.log("Generated palette length:", palette.length);
+            console.log("Generated palette:", palette);
+
+            if (!palette || palette.length === 0) {
+                console.error("RgbQuant failed to generate a palette.");
+                return;
+            }
+
+            const reducedImageData = ctx.createImageData(canvas.width, canvas.height);
+
+            for (let i = 0; i < reducedData.length; i++) {
+                const paletteIndex = reducedData[i];
+                const offset = i * 4;
+                const alpha = imageData.data[offset + 3]; // Preserve original alpha channel
+
+                if (alpha === 0) {
+                    reducedImageData.data[offset] = 0;
+                    reducedImageData.data[offset + 1] = 0;
+                    reducedImageData.data[offset + 2] = 0;
+                    reducedImageData.data[offset + 3] = 0; // Fully transparent
+                } else if (paletteIndex >= 0 && paletteIndex < palette.length) {
+                    const color = palette[paletteIndex];
+                    reducedImageData.data[offset] = color[0]; // Red
+                    reducedImageData.data[offset + 1] = color[1]; // Green
+                    reducedImageData.data[offset + 2] = color[2]; // Blue
+                    reducedImageData.data[offset + 3] = 255; // Fully opaque
+                } else {
+                    console.error(`Invalid palette index: ${paletteIndex} at position ${i}`);
+                    reducedImageData.data[offset] = reducedImageData.data[offset + 1] = reducedImageData.data[offset + 2] = 0;
+                    reducedImageData.data[offset + 3] = 255; // Opaque black as fallback
+                }
+            }
+
+            ctx.putImageData(reducedImageData, 0, 0);
+            editedImageURL = canvas.toDataURL("image/png"); // Update the quantized image URL
+            setupSnappedImage(editedImageURL);
+            console.log(`Image quantized to ${paletteSize} colors.`);
+        } catch (err) {
+            console.error("Error during quantization:", err);
+        }
+    };
+
+    img.onerror = () => console.error("Failed to load the snapped image for quantization.");
+}
+
+
+
 

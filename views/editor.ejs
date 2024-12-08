@@ -21,10 +21,8 @@
     data-original-image="<%= project.original_image || '' %>" 
     data-block-size="<%= project.block_size || '' %>">
 
-        
     <div class="action-buttons">
       <a href="/gallery" class="button view-projects"><span>Public Projects</span></a>
-      <!-- <a href="/profile" class="button view-profile"><span>Your Projects</span></a> -->
       <input type="file" id="upload">
       <p>Upload an image to get started.</p>
     </div>
@@ -33,20 +31,40 @@
       <label for="blockSizeInput">Block Size: </label>
       <input type="number" id="blockSizeInput" min="1" max="100">
     </div>
+
+    <div id="palette-controls">
+      <label for="paletteSizeSelect">Palette Size: </label>
+      <select id="paletteSizeSelect">
+        <option value="" selected>None</option>
+        <option value="16">16 Colors</option>
+        <option value="32">32 Colors</option>
+        <option value="64">64 Colors</option>
+        <option value="custom">Custom</option>
+      </select>
+      <input 
+        type="number" 
+        id="customPaletteSizeInput" 
+        class="hidden" 
+        placeholder="Enter custom palette size" 
+        min="2" 
+        max="256">
+    </div>
+
     <a class="button" id="toggleColorChangeMapButton">Show Color Change Map</a>
     <a class="button hidden" id="snapButton">Snap to Grid</a>
+    
     <div id="comparison" class="hidden">
       <figure>
         <div id="divisor"></div>
       </figure>
       <input type="range" min="0" max="100" value="50" id="slider">
     </div>
-    <!-- download logic in main.js -->
+
     <a class="button hidden" id="downloadButton">Download Image</a> 
-    <a href="#" class="button hidden" id="saveProjectButton" class="button save-project" >Save Project to Site</a>
+    <a href="#" class="button hidden" id="saveProjectButton" class="button save-project">Save Project to Site</a>
   </main>
-  
-  
+
+  <script type="text/javascript" src="/js/rgbquant.js"></script>
   <script type="text/javascript" src="/js/main.js"></script>
 </body>
 </html>
