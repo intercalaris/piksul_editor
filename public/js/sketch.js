@@ -3,15 +3,17 @@ const projectId = sketch.dataset.projectId;
 const editedImageFilename = sketch.dataset.editedImage; 
 const editedImageUrl = `/gallery/image/${editedImageFilename}`; 
 const blockSize = parseInt(sketch.dataset.blockSize, 10);
-const canvas = document.getElementById("drawingCanvas");
 const colorPicker = document.getElementById("colorPicker");
 const eraserButton = document.getElementById("eraserButton");
 const saveButton = document.getElementById("saveButton");
 const downloadButton = document.getElementById("downloadButton");
+const imageCanvas = document.getElementById("imageCanvas");
+const gridCanvas = document.getElementById("gridCanvas");
+const imageCtx = imageCanvas.getContext("2d");
+const gridCtx = gridCanvas.getContext("2d");
 let isDrawing = false;
 let isErasing = false;
 let currentColor = colorPicker.value;
-const ctx = canvas.getContext("2d");
 
 // Store the edited image
 let originalImage;
@@ -23,46 +25,51 @@ const loadEditedImage = async () => {
     return;
   }
   const img = new Image();
+  console.log(editedImageUrl);
   img.src = editedImageUrl;
 
   await new Promise((resolve, reject) => {
     img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      drawGrid();
-      originalImage = img; // Save the original image for erasing
-      resolve();
+        imageCanvas.width = img.width;
+        imageCanvas.height = img.height;
+        gridCanvas.width = imageCanvas.width;
+        gridCanvas.height = imageCanvas.height;
+        imageCtx.drawImage(img, 0, 0);
+        drawGrid();
+        originalImage = img; // Save original image for erasing/resetting
+        resolve();
     };
     img.onerror = (e) => {
-      console.error("Error loading edited image:", e);
-      reject(e);
+        console.error("Error loading edited image:", e);
+        reject(e);
     };
   });
 };
 
 // Draw snapping grid
 const drawGrid = () => {
-  ctx.save();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
-  ctx.lineWidth = 1;
-
-  for (let x = 0; x < canvas.width; x += blockSize) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, canvas.height);
-    ctx.stroke();
-  }
-
-  for (let y = 0; y < canvas.height; y += blockSize) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
-    ctx.stroke();
-  }
-
-  ctx.restore();
+    gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height); // Clear previous grid
+    gridCtx.save();
+    gridCtx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+    gridCtx.lineWidth = 1;
+  
+    for (let x = 0; x < gridCanvas.width; x += blockSize) {
+      gridCtx.beginPath();
+      gridCtx.moveTo(x, 0);
+      gridCtx.lineTo(x, gridCanvas.height);
+      gridCtx.stroke();
+    }
+  
+    for (let y = 0; y < gridCanvas.height; y += blockSize) {
+      gridCtx.beginPath();
+      gridCtx.moveTo(0, y);
+      gridCtx.lineTo(gridCanvas.width, y);
+      gridCtx.stroke();
+    }
+  
+    gridCtx.restore();
 };
+  
 
 // Snap coordinates to grid
 const snapToGrid = (x, y) => {
@@ -74,29 +81,28 @@ const snapToGrid = (x, y) => {
 
 // Draw a block
 const drawBlock = (x, y, color) => {
-  ctx.fillStyle = color;
-  ctx.fillRect(x, y, blockSize, blockSize);
+  imageCtx.fillStyle = color;
+  imageCtx.fillRect(x, y, blockSize, blockSize);
 };
 
 // Erase a block
 const eraseBlock = (x, y) => {
-  if (!originalImage) {
-    console.error("Original image not loaded, cannot erase.");
-    return;
-  }
-  // Draw the original pixel from the edited image
-  ctx.drawImage(
-    originalImage,
-    x, y, blockSize, blockSize, // Source position and size
-    x, y, blockSize, blockSize  // Canvas position and size
-  );
-};
+    if (!originalImage) {
+      console.error("Original image not loaded, cannot erase.");
+      return;
+    }
+    imageCtx.drawImage(
+      originalImage,
+      x, y, blockSize, blockSize, // Source position and size
+      x, y, blockSize, blockSize  // Target position and size
+    );
+  };
+  
 
-// Helper: Get scaled cursor position
 const getScaledCursorPosition = (event) => {
-  const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width; // ratio of internal to CSS rendered size so painting is accurate
-  const scaleY = canvas.height / rect.height;
+  const rect = imageCanvas.getBoundingClientRect();
+  const scaleX = imageCanvas.width / rect.width; // ratio of internal to CSS rendered size so painting is accurate
+  const scaleY = imageCanvas.height / rect.height;
   return {
     x: (event.clientX - rect.left) * scaleX,
     y: (event.clientY - rect.top) * scaleY,
@@ -104,7 +110,7 @@ const getScaledCursorPosition = (event) => {
 };
 
 // Event Handlers
-canvas.addEventListener("mousedown", (e) => {
+imageCanvas.addEventListener("mousedown", (e) => {
   isDrawing = true;
   const { x, y } = snapToGrid(...Object.values(getScaledCursorPosition(e)));
 
@@ -115,7 +121,7 @@ canvas.addEventListener("mousedown", (e) => {
   }
 });
 
-canvas.addEventListener("mousemove", (e) => {
+imageCanvas.addEventListener("mousemove", (e) => {
   if (!isDrawing) return;
   const { x, y } = snapToGrid(...Object.values(getScaledCursorPosition(e)));
 
@@ -126,11 +132,11 @@ canvas.addEventListener("mousemove", (e) => {
   }
 });
 
-canvas.addEventListener("mouseup", () => {
+imageCanvas.addEventListener("mouseup", () => {
   isDrawing = false;
 });
 
-canvas.addEventListener("mouseleave", () => {
+imageCanvas.addEventListener("mouseleave", () => {
   isDrawing = false;
 });
 
@@ -146,7 +152,7 @@ eraserButton.addEventListener("click", (e) => {
 
 saveButton.addEventListener("click", async (e) => {
   e.preventDefault();
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  const blob = await new Promise((resolve) => imageCanvas.toBlob(resolve, "image/png"));
 
   const formData = new FormData();
   formData.append("project_id", projectId);
@@ -172,7 +178,7 @@ saveButton.addEventListener("click", async (e) => {
 downloadButton.addEventListener("click", (e) => {
   e.preventDefault();
   const link = document.createElement("a");
-  link.href = canvas.toDataURL("image/png");
+  link.href = imageCanvas.toDataURL("image/png");
   link.download = "edited_image.png";
   link.click();
 });

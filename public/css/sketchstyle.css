@@ -82,25 +82,32 @@ main {
     max-width: 1200px;
 }
   
+
 .canvas-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: grid;
+    place-items: center;
     background-color: #1e1e1e;
     border: 1px solid #333;
     border-radius: 5px;
     padding: 10px;
   }
   canvas {
+    grid-area: 1 / 1;
     border: 1px solid #444;
     background-color: #121212;
     max-height: 80dvw;
     max-height: 80dvh;
   }
-  
-  
+
+#gridCanvas {
+  pointer-events: none;
+  background-color: transparent;
+}
+
+
+
   /* Tools Container */
-  .tools-container {
+.tools-container {
     flex: 0 1 14rem;
     display: flex;
     flex-direction: column;
@@ -172,7 +179,6 @@ main {
     }
   
     .tools-container {
-      width: 100%;
     }
   }
   
