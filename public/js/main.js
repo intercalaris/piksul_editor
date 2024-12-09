@@ -1,35 +1,39 @@
-const uploadInput = document.getElementById('upload');
-const snapButton = document.getElementById('snapButton');
-const downloadButton = document.getElementById('downloadButton');
-const blockSizeInput = document.getElementById('blockSizeInput');
+const uploadInput = document.getElementById("upload");
+const snapButton = document.getElementById("snapButton");
+const downloadButton = document.getElementById("downloadButton");
+const blockSizeInput = document.getElementById("blockSizeInput");
 // const toleranceInput = document.getElementById('toleranceInput');
-const controls = document.getElementById('controls');
-const divisor = document.getElementById('divisor');
-const slider = document.getElementById('slider');
-const comparison = document.getElementById('comparison');
-const startProjectButton = document.getElementById('startProjectButton');
-const saveProjectButton = document.getElementById('saveProjectButton');
-const openProjectButtons = document.querySelectorAll('.open-project');
-const deleteProjectButtons = document.querySelectorAll('.delete-project');
-const viewSavedProjectsButton = document.getElementById('viewSavedProjectsButton');
-const paletteSizeSelect = document.getElementById('paletteSizeSelect')
+const controls = document.getElementById("controls");
+const divisor = document.getElementById("divisor");
+const slider = document.getElementById("slider");
+const comparison = document.getElementById("comparison");
+const startProjectButton = document.getElementById("startProjectButton");
+const saveProjectButton = document.getElementById("saveProjectButton");
+const openProjectButtons = document.querySelectorAll(".open-project");
+const deleteProjectButtons = document.querySelectorAll(".delete-project");
+const viewSavedProjectsButton = document.getElementById(
+    "viewSavedProjectsButton"
+);
+const paletteSizeSelect = document.getElementById("paletteSizeSelect");
 let originalImage = null;
 let originalImageURL = null;
 let editedImageURL = null;
 let originalBlob = null;
 let editedBlob = null;
 let projectId = null;
-let originalFileName = ''; 
+let originalFileName = "";
 let estimatedBlockSize = 8;
 let estimatedTolerance = 30;
 
-const toggleColorChangeMapButton = document.getElementById('toggleColorChangeMapButton');
+const toggleColorChangeMapButton = document.getElementById(
+    "toggleColorChangeMapButton"
+);
 let isColorChangeMapVisible = false;
 let colorChangePositions = [];
 
 function calculateColorChanges(img) {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     canvas.width = img.width;
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
@@ -44,13 +48,25 @@ function calculateColorChanges(img) {
             const index = (y * width + x) * 4;
             if (x > 0) {
                 const prevIndex = (y * width + x - 1) * 4;
-                if (colorsAreDifferent(data.slice(index, index + 3), data.slice(prevIndex, prevIndex + 3), estimatedTolerance)) {
+                if (
+                    colorsAreDifferent(
+                        data.slice(index, index + 3),
+                        data.slice(prevIndex, prevIndex + 3),
+                        estimatedTolerance
+                    )
+                ) {
                     changes.push({ x, y });
                 }
             }
             if (y > 0) {
                 const prevIndex = ((y - 1) * width + x) * 4;
-                if (colorsAreDifferent(data.slice(index, index + 3), data.slice(prevIndex, prevIndex + 3), estimatedTolerance)) {
+                if (
+                    colorsAreDifferent(
+                        data.slice(index, index + 3),
+                        data.slice(prevIndex, prevIndex + 3),
+                        estimatedTolerance
+                    )
+                ) {
                     changes.push({ x, y });
                 }
             }
@@ -60,23 +76,23 @@ function calculateColorChanges(img) {
 }
 
 function drawColorChangeMap(img, changes) {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     canvas.width = img.width;
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
 
-    ctx.fillStyle = 'red';
+    ctx.fillStyle = "red";
     changes.forEach(({ x, y }) => {
         ctx.fillRect(x, y, 1, 1); // Mark each pixel as red
     });
 
-    const overlay = document.querySelector('#comparison figure');
+    const overlay = document.querySelector("#comparison figure");
     overlay.style.backgroundImage = `url(${canvas.toDataURL()})`; // Just update display
 }
 
-toggleColorChangeMapButton?.addEventListener('click', async () => {
-    const overlay = document.querySelector('#comparison figure');
+toggleColorChangeMapButton?.addEventListener("click", async () => {
+    const overlay = document.querySelector("#comparison figure");
     if (!isColorChangeMapVisible) {
         // Show the color change map
         const img = new Image();
@@ -106,11 +122,11 @@ function setupOriginalImage(url, imgElement) {
             imgElement.style.backgroundImage = `url(${url})`;
             originalImageURL = url; // Save the original image URL
             console.log("Original image loaded successfully.");
-            resolve(); 
+            resolve();
         };
         img.onerror = () => {
             console.error("Error loading image:", url);
-            reject(new Error("Failed to load image")); 
+            reject(new Error("Failed to load image"));
         };
         img.src = url; // Start image load
     });
@@ -123,8 +139,8 @@ function setupSnappedImage(editedImageURL) {
     divisor.style.backgroundRepeat = "no-repeat";
     divisor.style.backgroundPosition = "top left";
     // Show buttons only after snapping
-    downloadButton.classList.remove('hidden');
-    saveProjectButton.classList.remove('hidden');
+    downloadButton.classList.remove("hidden");
+    saveProjectButton.classList.remove("hidden");
     console.log("Snapped image setup complete.");
 }
 
@@ -136,124 +152,135 @@ function populateBlockValue(img) {
 }
 
 async function deleteProject(click) {
-    console.log('delete commencing');
+    console.log("delete commencing");
     const deleteProjectButton = click.target;
     const project = deleteProjectButton.closest(".project-card");
     projectID = project.getAttribute("data-id");
     try {
         const response = await fetch(`/projects/${projectID}`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' }
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
         });
         if (response.ok) {
-          window.location.reload();
+            window.location.reload();
         }
-      } catch (error) {
+    } catch (error) {
         console.error("Error deleting project:", error);
-      }
+    }
 }
 
-uploadInput?.addEventListener('change', async (event) => {
+uploadInput?.addEventListener("change", async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
     // Reset states
-    originalFileName = file.name.split('.')[0];
+    originalFileName = file.name.split(".")[0];
     projectId = null;
     editedImageURL = null;
-    isColorChangeMapVisible = false; 
-    toggleColorChangeMapButton.textContent = "Show Color Change Map"; 
+    isColorChangeMapVisible = false;
+    toggleColorChangeMapButton.textContent = "Show Color Change Map";
     colorChangePositions = [];
-    divisor.style.backgroundImage = ''; 
-    downloadButton.classList.add('hidden');
-    saveProjectButton.classList.add('hidden');
+    divisor.style.backgroundImage = "";
+    downloadButton.classList.add("hidden");
+    saveProjectButton.classList.add("hidden");
 
     // Load new image
     const originalImageURL = URL.createObjectURL(file);
     originalBlob = await fetch(originalImageURL).then((res) => res.blob()); // Save uploaded image blob
-    await setupOriginalImage(originalImageURL, document.querySelector('#comparison figure'));
+    await setupOriginalImage(
+        originalImageURL,
+        document.querySelector("#comparison figure")
+    );
 
     const img = new Image();
     img.onload = () => {
-        controls.classList.remove('hidden'); 
-        comparison.classList.remove('hidden');
-        snapButton.classList.remove('hidden');
+        controls.classList.remove("hidden");
+        comparison.classList.remove("hidden");
+        snapButton.classList.remove("hidden");
         populateBlockValue(img);
     };
     img.src = originalImageURL;
 });
 
-saveProjectButton?.addEventListener('click', async () => {
+saveProjectButton?.addEventListener("click", async () => {
     const formData = new FormData();
-    formData.append('original_image', new File([originalBlob], 'original.png'));
-    formData.append('edited_image', new File([editedBlob], 'edited.png'));
-    formData.append('block_size', blockSizeInput.value);
-    formData.append('palette_size', paletteSizeSelect.value);
-    if (projectId) formData.append('project_id', projectId);
+    formData.append("original_image", new File([originalBlob], "original.png"));
+    formData.append("edited_image", new File([editedBlob], "edited.png"));
+    formData.append("block_size", blockSizeInput.value);
+    formData.append("palette_size", paletteSizeSelect.value);
+    if (projectId) formData.append("project_id", projectId);
     try {
-        const response = await fetch('/projects', {
-            method: 'POST',
+        const response = await fetch("/projects", {
+            method: "POST",
             body: formData,
         });
         if (!response.ok) {
-            throw new Error('Failed to save the project');
+            throw new Error("Failed to save the project");
         }
         const result = await response.json();
         if (result.project_id) {
-            console.log('Project saved successfully:', result);
+            console.log("Project saved successfully:", result);
             projectId = result.project_id; // update ID for later saves
         } else {
-            console.error('Invalid response: missing project ID');
+            console.error("Invalid response: missing project ID");
         }
     } catch (error) {
-        console.error('Error saving the project:', error);
+        console.error("Error saving the project:", error);
     }
 });
 
-snapButton?.addEventListener('click', snapButtonClick);
+snapButton?.addEventListener("click", snapButtonClick);
 
 async function snapButtonClick() {
-    const userBlockSize = parseInt(blockSizeInput.value, 10) || estimatedBlockSize;
+    const userBlockSize =
+        parseInt(blockSizeInput.value, 10) || estimatedBlockSize;
     try {
         await snapToGrid(userBlockSize); // wait for snapping before applying palette size
         paletteSizeChange();
-        downloadButton.classList.remove('hidden');
-        saveProjectButton.classList.remove('hidden');
+        downloadButton.classList.remove("hidden");
+        saveProjectButton.classList.remove("hidden");
     } catch (error) {
         console.error("Error during snapping or palette size change:", error);
     }
 }
 
-uploadInput?.addEventListener('change', async (event) => {
+uploadInput?.addEventListener("change", async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    originalFileName = file.name.split('.')[0];
+    originalFileName = file.name.split(".")[0];
     editedImageURL = null;
     colorChangePositions = [];
-    divisor.style.backgroundImage = '';
-    paletteSizeSelect.value = ''; // Reset palette selection
+    divisor.style.backgroundImage = "";
+    paletteSizeSelect.value = ""; // Reset palette selection
     originalImageURL = URL.createObjectURL(file);
-    await setupOriginalImage(originalImageURL, document.querySelector('#comparison figure'));
+    await setupOriginalImage(
+        originalImageURL,
+        document.querySelector("#comparison figure")
+    );
 });
 
-downloadButton?.addEventListener('click', () => {
+downloadButton?.addEventListener("click", () => {
     if (editedImageURL) {
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = editedImageURL;
         link.download = `piksul_${originalFileName}.png`;
         link.click();
     }
 });
-deleteProjectButtons?.forEach(button => button.addEventListener("click", deleteProject));
-openProjectButtons?.forEach(button => button.addEventListener("click", openProject));
+deleteProjectButtons?.forEach((button) =>
+    button.addEventListener("click", deleteProject)
+);
+openProjectButtons?.forEach((button) =>
+    button.addEventListener("click", openProject)
+);
 
-slider?.addEventListener('input', () =>  {
+slider?.addEventListener("input", () => {
     divisor.style.width = slider.value + "%";
 });
 
 // Set up editor after open project is clicked in gallery
-document.addEventListener('DOMContentLoaded', async () => {
-    const editorMain = document.getElementById('editor');
+document.addEventListener("DOMContentLoaded", async () => {
+    const editorMain = document.getElementById("editor");
     if (editorMain) {
         projectId = editorMain.dataset.projectId;
         console.log({ projectId });
@@ -272,14 +299,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 originalBlob = await response.blob(); // Update originalBlob
 
                 // Load the image into the editor
-                await setupOriginalImage(imagePath, document.querySelector('#comparison figure'));
-                controls.classList.remove('hidden');
-                comparison.classList.remove('hidden');
-                snapButton.classList.remove('hidden');
+                await setupOriginalImage(
+                    imagePath,
+                    document.querySelector("#comparison figure")
+                );
+                controls.classList.remove("hidden");
+                comparison.classList.remove("hidden");
+                snapButton.classList.remove("hidden");
 
                 // Populate block size
                 blockSizeInput.value = blockSize;
-                paletteSizeSelect.value = paletteSize
+                paletteSizeSelect.value = paletteSize;
                 snapButtonClick();
             } catch (error) {
                 console.error("Error during editor setup:", error);
@@ -288,7 +318,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-paletteSizeSelect?.addEventListener('change', paletteSizeChange);
+paletteSizeSelect?.addEventListener("change", paletteSizeChange);
 
 function paletteSizeChange() {
     const paletteSize = parseInt(paletteSizeSelect.value, 10);
@@ -307,14 +337,11 @@ function paletteSizeChange() {
     }
 }
 
-
-
-
 // CALCULATIONS
 function estimateBlockSize(img) {
     const tolerance = 30;
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     canvas.width = img.width;
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
@@ -327,11 +354,19 @@ function estimateBlockSize(img) {
 
     function analyzeLine(primaryLimit, secondaryLimit, getIndex) {
         for (let primary = 0; primary < primaryLimit; primary++) {
-            let prevColor = [data[getIndex(primary, 0)], data[getIndex(primary, 0) + 1], data[getIndex(primary, 0) + 2]];
+            let prevColor = [
+                data[getIndex(primary, 0)],
+                data[getIndex(primary, 0) + 1],
+                data[getIndex(primary, 0) + 2],
+            ];
             let count = 1;
             for (let secondary = 1; secondary < secondaryLimit; secondary++) {
                 const index = getIndex(primary, secondary);
-                const currentColor = [data[index], data[index + 1], data[index + 2]];
+                const currentColor = [
+                    data[index],
+                    data[index + 1],
+                    data[index + 2],
+                ];
                 if (colorsAreDifferent(prevColor, currentColor, tolerance)) {
                     if (count > 1) colorChanges.push(count);
                     count = 1;
@@ -339,32 +374,45 @@ function estimateBlockSize(img) {
                     count++;
                 }
                 prevColor = currentColor;
-    }}}
+            }
+        }
+    }
 
     analyzeLine(height, width, (y, x) => (y * width + x) * 4); // Horizontal
     analyzeLine(width, height, (x, y) => (y * width + x) * 4); // Vertical
 
     console.log(`Total color changes: ${colorChanges.length}`);
     colorChanges.sort((a, b) => a - b);
-    const lengthThreshold = colorChanges[Math.floor(0.75 * colorChanges.length)];
-    const filteredChanges = colorChanges.filter(value => value <= lengthThreshold);
+    const lengthThreshold =
+        colorChanges[Math.floor(0.75 * colorChanges.length)];
+    const filteredChanges = colorChanges.filter(
+        (value) => value <= lengthThreshold
+    );
 
     const frequencyMap = {};
-    filteredChanges.forEach(value => {
+    filteredChanges.forEach((value) => {
         frequencyMap[value] = (frequencyMap[value] || 0) + 1;
     });
 
-    const sortedFrequencies = Object.entries(frequencyMap).sort((a, b) => b[1] - a[1]);
-    const topCandidates = sortedFrequencies.slice(0, 3).map(([value]) => parseInt(value));
-    const evaluationScores = topCandidates.map(candidateSize => evaluateSnapping(img, candidateSize));
-    const bestCandidateIndex = evaluationScores.indexOf(Math.min(...evaluationScores));
+    const sortedFrequencies = Object.entries(frequencyMap).sort(
+        (a, b) => b[1] - a[1]
+    );
+    const topCandidates = sortedFrequencies
+        .slice(0, 3)
+        .map(([value]) => parseInt(value));
+    const evaluationScores = topCandidates.map((candidateSize) =>
+        evaluateSnapping(img, candidateSize)
+    );
+    const bestCandidateIndex = evaluationScores.indexOf(
+        Math.min(...evaluationScores)
+    );
     return topCandidates[bestCandidateIndex];
 }
 
 function evaluateSnapping(img, blockSize) {
     console.log(`Evaluating snapping quality for block size: ${blockSize}`);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     canvas.width = img.width;
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
@@ -389,7 +437,9 @@ function evaluateSnapping(img, blockSize) {
             let cellDeviation = 0;
             let cellPixelCount = 0;
 
-            let colorSumR = 0, colorSumG = 0, colorSumB = 0;
+            let colorSumR = 0,
+                colorSumG = 0,
+                colorSumB = 0;
             let colorValues = [];
 
             // Calculate deviation for each pixel in the block cell from the sampled color
@@ -402,14 +452,19 @@ function evaluateSnapping(img, blockSize) {
                         const dr = data[newIndex] - r;
                         const dg = data[newIndex + 1] - g;
                         const db = data[newIndex + 2] - b;
-                        cellDeviation += Math.abs(dr) + Math.abs(dg) + Math.abs(db);
+                        cellDeviation +=
+                            Math.abs(dr) + Math.abs(dg) + Math.abs(db);
                         cellPixelCount++;
 
                         // Calculate color statistics for weight calculation
                         colorSumR += data[newIndex];
                         colorSumG += data[newIndex + 1];
                         colorSumB += data[newIndex + 2];
-                        colorValues.push([data[newIndex], data[newIndex + 1], data[newIndex + 2]]);
+                        colorValues.push([
+                            data[newIndex],
+                            data[newIndex + 1],
+                            data[newIndex + 2],
+                        ]);
                     }
                 }
             }
@@ -423,7 +478,10 @@ function evaluateSnapping(img, blockSize) {
             let colorVariance = 0;
             for (let i = 0; i < colorValues.length; i++) {
                 const [rVal, gVal, bVal] = colorValues[i];
-                colorVariance += Math.pow(rVal - meanR, 2) + Math.pow(gVal - meanG, 2) + Math.pow(bVal - meanB, 2);
+                colorVariance +=
+                    Math.pow(rVal - meanR, 2) +
+                    Math.pow(gVal - meanG, 2) +
+                    Math.pow(bVal - meanB, 2);
             }
             colorVariance /= cellPixelCount;
 
@@ -438,7 +496,9 @@ function evaluateSnapping(img, blockSize) {
         }
     }
 
-    console.log(`Total deviation for block size ${blockSize}: ${totalDeviation}`);
+    console.log(
+        `Total deviation for block size ${blockSize}: ${totalDeviation}`
+    );
     return totalDeviation;
 }
 
@@ -450,12 +510,12 @@ function colorsAreDifferent(color1, color2, tolerance) {
     );
 }
 
-let snappedImageURL = null; 
+let snappedImageURL = null;
 
 function snapToGrid(blockSize) {
     console.log("Snapping to Grid with size:", blockSize, "and tolerance: 30");
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
     const img = new Image();
 
     return new Promise((resolve, reject) => {
@@ -466,15 +526,26 @@ function snapToGrid(blockSize) {
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
 
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
             const data = imageData.data;
             const width = canvas.width;
             const height = canvas.height;
 
             for (let y = 0; y < height; y += blockSize) {
                 for (let x = 0; x < width; x += blockSize) {
-                    const centerX = Math.min(x + Math.floor(blockSize / 2), width - 1);
-                    const centerY = Math.min(y + Math.floor(blockSize / 2), height - 1);
+                    const centerX = Math.min(
+                        x + Math.floor(blockSize / 2),
+                        width - 1
+                    );
+                    const centerY = Math.min(
+                        y + Math.floor(blockSize / 2),
+                        height - 1
+                    );
                     const index = (centerY * width + centerX) * 4;
                     const r = data[index];
                     const g = data[index + 1];
@@ -498,7 +569,7 @@ function snapToGrid(blockSize) {
             }
 
             ctx.putImageData(imageData, 0, 0);
-            snappedImageURL = canvas.toDataURL('image/png'); // Save snapped image URL
+            snappedImageURL = canvas.toDataURL("image/png"); // Save snapped image URL
             editedImageURL = snappedImageURL; // Start with snapped image for display
 
             // Update `editedBlob` after snapping
@@ -509,14 +580,18 @@ function snapToGrid(blockSize) {
 
         img.onerror = () => {
             console.error("Failed to load the original image for snapping.");
-            reject(new Error("Failed to load the original image for snapping."));
+            reject(
+                new Error("Failed to load the original image for snapping.")
+            );
         };
     });
 }
 
 function applyQuantizationToImage(paletteSize) {
     if (!snappedImageURL) {
-        console.error("Snapped image not available. Please snap the image to the grid first.");
+        console.error(
+            "Snapped image not available. Please snap the image to the grid first."
+        );
         return;
     }
     const img = new Image();
@@ -542,7 +617,10 @@ function applyQuantizationToImage(paletteSize) {
                 console.error("RgbQuant failed to generate a palette.");
                 return;
             }
-            const reducedImageData = ctx.createImageData(canvas.width, canvas.height);
+            const reducedImageData = ctx.createImageData(
+                canvas.width,
+                canvas.height
+            );
             for (let i = 0; i < reducedData.length; i++) {
                 const paletteIndex = reducedData[i];
                 const offset = i * 4;
@@ -560,8 +638,11 @@ function applyQuantizationToImage(paletteSize) {
                     reducedImageData.data[offset + 2] = color[2]; // Blue
                     reducedImageData.data[offset + 3] = 255; // Fully opaque
                 } else {
-                    reducedImageData.data[offset] = reducedImageData.data[offset + 1] = reducedImageData.data[offset + 2] = 0;
-                    reducedImageData.data[offset + 3] = 255; 
+                    reducedImageData.data[offset] =
+                        reducedImageData.data[offset + 1] =
+                        reducedImageData.data[offset + 2] =
+                            0;
+                    reducedImageData.data[offset + 3] = 255;
                 }
             }
 
@@ -577,10 +658,6 @@ function applyQuantizationToImage(paletteSize) {
         }
     };
 
-    img.onerror = () => console.error("Failed to load the snapped image for quantization.");
+    img.onerror = () =>
+        console.error("Failed to load the snapped image for quantization.");
 }
-
-
-
-
-
