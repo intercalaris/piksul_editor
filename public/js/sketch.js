@@ -13,6 +13,9 @@ let isErasing = false;
 let currentColor = colorPicker.value;
 const ctx = canvas.getContext("2d");
 
+// Store the edited image
+let originalImage;
+
 // Load edited image onto canvas
 const loadEditedImage = async () => {
   if (!editedImageFilename) {
@@ -21,12 +24,14 @@ const loadEditedImage = async () => {
   }
   const img = new Image();
   img.src = editedImageUrl;
+
   await new Promise((resolve, reject) => {
     img.onload = () => {
       canvas.width = img.width;
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
       drawGrid();
+      originalImage = img; // Save the original image for erasing
       resolve();
     };
     img.onerror = (e) => {
@@ -75,14 +80,22 @@ const drawBlock = (x, y, color) => {
 
 // Erase a block
 const eraseBlock = (x, y) => {
-  ctx.clearRect(x, y, blockSize, blockSize);
-  drawGrid();
+  if (!originalImage) {
+    console.error("Original image not loaded, cannot erase.");
+    return;
+  }
+  // Draw the original pixel from the edited image
+  ctx.drawImage(
+    originalImage,
+    x, y, blockSize, blockSize, // Source position and size
+    x, y, blockSize, blockSize  // Canvas position and size
+  );
 };
 
 // Helper: Get scaled cursor position
 const getScaledCursorPosition = (event) => {
   const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width; // ratio of internal to CSS rendered size so painting still accurate
+  const scaleX = canvas.width / rect.width; // ratio of internal to CSS rendered size so painting is accurate
   const scaleY = canvas.height / rect.height;
   return {
     x: (event.clientX - rect.left) * scaleX,
