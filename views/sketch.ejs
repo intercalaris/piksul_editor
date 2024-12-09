@@ -8,23 +8,22 @@
   <title>Manual Pixel Editor</title>
 </head>
 <body>
-  <header>
-    <div class="banner">
-      <a class="button login"><span>Log In</span></a>
-      <a class="button create-account"><span>Create Account</span></a>
-      <a class="button logout"><span>Log Out</span></a>
-    </div>
-  </header>
+    <header class="banner">
+            <div class="navigation">
+                <a href="/gallery" class="button back-to-gallery"><span>Back to Gallery</span></a>
+            </div>
+            <div class="users">
+                <a class="button login"><span>Log In</span></a>
+                <a class="button create-account"><span>Create Account</span></a>
+                <a class="button logout"><span>Log Out</span></a>
+            </div>
+    </header>
 
   <main id="sketch"
     data-project-id="<%= project.id || '' %>"
     data-edited-image="<%= project.edited_image || '' %>"
     data-block-size="<%= project.block_size || '' %>"
     data-palette-size="<%= project.palette_size || '' %>">
-
-    <div class="action-buttons">
-      <a href="/gallery" class="button back-to-gallery"><span>Back to Gallery</span></a>
-    </div>
 
     <div class="editor-container">
       <div class="canvas-container">
@@ -36,11 +35,9 @@
           <label for="colorPicker">Choose Color:</label>
           <input type="color" id="colorPicker" value="#000000">
         </div>
-
         <div class="tool">
           <a href="#" id="eraserButton" class="button eraser"><span>Eraser</span></a>
         </div>
-
         <div class="tool">
           <a href="#" id="saveButton" class="button save"><span>Save to Site</span></a>
           <a href="#" id="downloadButton" class="button download"><span>Download</span></a>
