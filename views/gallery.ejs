@@ -16,6 +16,8 @@
     </div>
   </header>
   <main>
+    <a href="/editor" class="button start-project"><span>Start New Project</span></a>
+
     <h1>Saved Projects</h1>
     <section class="projects-gallery">
       <% if (projects.length === 0) { %>
@@ -26,6 +28,7 @@
             <img src="/gallery/image/<%= project.edited_image %>" alt="Project Thumbnail">
             <div class="project-info">
               <p>Block Size: <%= project.block_size %></p>
+              <p>Palette Size: <%= project.palette_size %></p>
               <!-- <p>Tolerance: <%= project.tolerance %></p> -->
               <p>Created At: <%= new Date(project.created_at).toLocaleString() %></p>
             </div>

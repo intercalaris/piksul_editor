@@ -25,6 +25,13 @@ router.post("/projects",
     upload.fields([{ name: "original_image" }, { name: "edited_image" }]),
     mainController.createOrUpdateProject);   
 
+// router.get("/sketch/:id", mainController.openInSketch);
+router.get("/sketch/:id", (req, res, next) => {
+    console.log("Sketch route hit with ID:", req.params.id);
+    next();
+}, mainController.openInSketch);
+
+
 router.delete("/projects/:id", mainController.deleteProject);
 
 // router.get("/profile", ensureAuth, mainController.getProfile);

@@ -13,7 +13,6 @@ module.exports = {
     });
   },
 
-
   openInEditor: async (req, res) => {
     const id = req.params.id;
     try {
@@ -32,11 +31,33 @@ module.exports = {
       res.status(500).send("Error loading project");
     }
   },
-  
+  openInSketch: async (req, res) => {
+    const id = req.params.id;
+    try {
+        console.log("Fetching project with ID:", id);
+        const project = await new Promise((resolve, reject) => {
+            db.get("SELECT * FROM projects WHERE id = ?", [id], (err, row) => {
+                if (err) {
+                    console.error("Database error:", err);
+                    return reject(err);
+                }
+                console.log("Database row fetched:", row);
+                resolve(row);
+            });
+        });
 
+        if (!project) {
+            console.warn("Project not found for ID:", id);
+            return res.status(404).send("Project not found");
+        }
 
-
-
+        console.log("Rendering sketch.ejs with project:", project);
+        res.render("sketch.ejs", { project });
+    } catch (error) {
+        console.error("Error in openInSketch:", error);
+        res.status(500).send("Error loading project");
+    }
+  },
 
 
   getGallery: async (req, res) => {
@@ -107,7 +128,6 @@ module.exports = {
       res.status(500).json({ error: "An error occurred while processing the project" });
     }
   },
-  
 
   deleteProject: async (req, res) => {
     const projectID = req.params.id;
