@@ -1,7 +1,7 @@
 const sketch = document.getElementById("sketch");
 const projectId = sketch.dataset.projectId;
-const editedImageFilename = sketch.dataset.editedImage; // Edited image filename
-const editedImageUrl = `/gallery/image/${editedImageFilename}`; // Construct full URL dynamically
+const editedImageFilename = sketch.dataset.editedImage; 
+const editedImageUrl = `/gallery/image/${editedImageFilename}`; 
 const blockSize = parseInt(sketch.dataset.blockSize, 10);
 const canvas = document.getElementById("drawingCanvas");
 const colorPicker = document.getElementById("colorPicker");
@@ -13,6 +13,7 @@ let isErasing = false;
 let currentColor = colorPicker.value;
 const ctx = canvas.getContext("2d");
 
+// Load edited image onto canvas
 const loadEditedImage = async () => {
   if (!editedImageFilename) {
     console.error("Edited image filename is missing.");
@@ -74,15 +75,25 @@ const drawBlock = (x, y, color) => {
 
 // Erase a block
 const eraseBlock = (x, y) => {
-  ctx.clearRect(x, y, blockSize, blockSize); // Clear the block directly
+  ctx.clearRect(x, y, blockSize, blockSize);
   drawGrid();
+};
+
+// Helper: Get scaled cursor position
+const getScaledCursorPosition = (event) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width; // ratio of internal to CSS rendered size so painting still accurate
+  const scaleY = canvas.height / rect.height;
+  return {
+    x: (event.clientX - rect.left) * scaleX,
+    y: (event.clientY - rect.top) * scaleY,
+  };
 };
 
 // Event Handlers
 canvas.addEventListener("mousedown", (e) => {
   isDrawing = true;
-  const rect = canvas.getBoundingClientRect();
-  const { x, y } = snapToGrid(e.clientX - rect.left, e.clientY - rect.top);
+  const { x, y } = snapToGrid(...Object.values(getScaledCursorPosition(e)));
 
   if (isErasing) {
     eraseBlock(x, y);
@@ -93,8 +104,7 @@ canvas.addEventListener("mousedown", (e) => {
 
 canvas.addEventListener("mousemove", (e) => {
   if (!isDrawing) return;
-  const rect = canvas.getBoundingClientRect();
-  const { x, y } = snapToGrid(e.clientX - rect.left, e.clientY - rect.top);
+  const { x, y } = snapToGrid(...Object.values(getScaledCursorPosition(e)));
 
   if (isErasing) {
     eraseBlock(x, y);
