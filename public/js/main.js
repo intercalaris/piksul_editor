@@ -308,9 +308,10 @@ slider?.addEventListener("input", () => {
     divisor.style.width = slider.value + "%";
 });
 
-// Set up editor after open project is clicked in gallery
 document.addEventListener("DOMContentLoaded", async () => {
+    // Set up editor after open project is clicked in gallery
     const editorMain = document.getElementById("editor");
+    const gallery = document.getElementById("gallery");
     if (editorMain) {
         projectId = editorMain.dataset.projectId;
         console.log({ projectId });
@@ -347,6 +348,24 @@ document.addEventListener("DOMContentLoaded", async () => {
                 console.error("Error during editor setup:", error);
             }
         }
+    }
+    if(gallery) {
+        const openSketchButtons = document.querySelectorAll('.project-buttons #open-sketch');          
+        openSketchButtons.forEach(button => {
+            button.addEventListener('click', (e) => {        
+            const projectCard = button.closest('.project-card');
+            if (!projectCard) return;
+            const projectId = projectCard.dataset.id;
+            const blockSize = projectCard.dataset.blockSize;
+            const paletteSize = projectCard.dataset.paletteSize;
+            const editedImage = projectCard.dataset.editedImage;
+            const imagePath = `/gallery/image/${editedImage}`;
+            localStorage.setItem("editedImage", imagePath);
+            localStorage.setItem("blockSize", blockSize);
+            localStorage.setItem("paletteSize", paletteSize);
+            window.location.href = `/sketch/${projectId}`;
+            });
+        });
     }
 });
 

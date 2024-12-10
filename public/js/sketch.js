@@ -1,5 +1,5 @@
 const sketch = document.getElementById("sketch");
-const projectId = sketch.dataset.projectId;
+let projectId = sketch.dataset.projectId;
 const editedImageFilename = sketch.dataset.editedImage;
 let blockSize = parseInt(sketch.dataset.blockSize, 10);
 const colorPicker = document.getElementById("colorPicker");

@@ -15,7 +15,7 @@
       <button class="button logout"><span>Log Out</span></button>
     </div>
   </header>
-  <main>
+  <main id="gallery">
     <a href="/editor" class="button start-project"><span>Start New Project</span></a>
 
     <h1>Saved Projects</h1>
@@ -24,7 +24,12 @@
         <p>No projects saved yet.</p>
       <% } else { %>
         <% projects.forEach(project => { %>
-          <div class="project-card" data-id="<%= project.id %>">
+          <div	class="project-card" 
+				data-id="<%= project.id %>"
+				data-block-size="<%= project.block_size %>"
+				data-palette-size="<%= project.palette_size %>"
+				data-edited-image="<%= project.edited_image %>">
+
             <img src="/gallery/image/<%= project.edited_image %>" alt="Project Thumbnail">
             <div class="project-info">
               <p>Block Size: <%= project.block_size %></p>
@@ -34,6 +39,7 @@
             </div>
             <div class="project-buttons">
               <a href="/editor/<%= project.id %>" class="button" id="open-project">Open in Editor</a>
+              <a href="#" class="button" id="open-sketch">Open in Sketch</a>
               <a class="button delete-project">Delete</a>
             </div>
           </div>
