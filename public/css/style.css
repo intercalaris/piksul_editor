@@ -18,9 +18,19 @@ img{
 /******************************************
 /* ADDITIONAL STYLES
 /*******************************************/
+
 html {
   font-size: 62.5%;
   height: 100%;
+  font-family: "Tiny5", "Consolas", "Courier New", "Lucida Console", Arial, Helvetica, sans-serif;
+  background-color: #121212;
+  color: #e0e0e0;
+}
+@font-face {
+  font-family: "Tiny5";
+  src: url("/fonts/Tiny5-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
 }
 body {
   display: flex;
@@ -31,29 +41,25 @@ body {
 /* BUTTONS */
 .button {
   display: inline-block;
+  text-align: center;
   transition: all 0.2s ease;
-  padding: 10px 20px;
+  padding: 9px 11px;
   font-size: 16px;
   color: #fff;
-  background-color: #007BFF;
-  border: 1px solid darkblue;
-  border-radius: 5px;
-  text-align: center;
   text-decoration: none;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.141);
+  background: rgba(23, 10, 103, 0.141);
+  box-shadow: 0 0 9px rgba(255, 255, 255, 0.2), 0 0 12px rgba(255, 255, 255, 0.2);
   border: 2px solid #fff;
-  color: #fff;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2), 0 0 30px rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
   margin: 8px;
 }
 .button:hover {
-  background: rgba(255, 255, 255, 0.207);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2), 0 0 30px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.7), 0 0 15px rgba(255, 255, 255, 0.2);
 }
 .button:active {
-  background: rgba(255, 255, 255, 0.438);
-  box-shadow: 0 0 30px rgba(231, 246, 249, 0.572), 0 0 70px rgba(248, 245, 192, 0.735);
+  background: rgba(178, 173, 211, 0.503);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.9), 0 0 25px rgba(255, 255, 255, 0.4);
 }
 
 /* GENERAL */
