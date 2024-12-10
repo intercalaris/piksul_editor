@@ -58,7 +58,7 @@ img {
 header {
     background-color: rgb(23, 2, 63);
     border: 2px solid rgb(22, 22, 59);
-    padding: 1rem 4rem;
+    padding: 1rem 5rem;
 	display: flex;
     justify-content: space-between;
     gap: 2rem;
@@ -99,7 +99,7 @@ main {
     justify-content: space-between;
     gap: 4rem;
     width: 100%;
-	padding: 4rem;
+	padding: 5rem;
 }
 
 .main-layout .left-panel {
@@ -175,8 +175,14 @@ body {
     color: white;
     min-height: 100vh;
 }
-#editor {
 
+#editor {
+    background: linear-gradient(to bottom right, #0a0c1c, #110233);
+	padding: 5rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4rem;
+    width: 100%;
 }
 #editor .action-buttons {
     display: flex;
@@ -271,8 +277,16 @@ input[type="range"]::-moz-range-thumb {
     .main-layout {
         flex-direction: column;
         align-items: center;
+		justify-content: flex-start;
     }
 	.main-layout .left-panel {
 		max-width: 100%;
 	}
+	.main-layout .demo-container {
+		max-width: none;
+		width: 100%;   
+	}
+    .demo-container img {
+        width: 100%; 
+    }
 }

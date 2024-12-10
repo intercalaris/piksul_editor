@@ -313,7 +313,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         
         if (projectId && originalImageFilename) {
             const imagePath = `/gallery/image/${originalImageFilename}`;
-
+            const getStartedText = document.getElementById("get-started");
+            getStartedText.style.display = "none";
             try {
                 // Fetch the original image as a blob
                 const response = await fetch(imagePath);
@@ -611,7 +612,7 @@ async function snapToGrid(blockSize) {
 
     // Store snapped image as Data URL
     localStorage.setItem("editedImage", editedImageURL);
-    console.log(`LocalStorage updated with edited image after snapping: ${editedImageURL}`);
+    console.log('LocalStorage updated with edited image after snapping');
 }
 
 
@@ -675,7 +676,7 @@ function applyQuantizationToImage(paletteSize) {
             editedBlob = await fetch(editedImageURL).then((res) => res.blob());
             setupSnappedImage(editedImageURL);
             localStorage.setItem("editedImage", editedImageURL);
-            console.log(`LocalStorage updated with edited image after quantization: ${editedImageURL}`);
+            console.log('LocalStorage updated with edited image after quantization');
         } catch (err) {
             console.error("Error during quantization:", err);
         }
