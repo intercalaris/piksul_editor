@@ -23,10 +23,7 @@ let projectId = null;
 let originalFileName = "";
 let estimatedBlockSize = 8;
 let estimatedTolerance = 30;
-
-const toggleColorChangeMapButton = document.getElementById(
-    "toggleColorChangeMapButton"
-);
+const toggleColorChangeMapButton = document.getElementById("toggleColorChangeMapButton");
 let isColorChangeMapVisible = false;
 let colorChangePositions = [];
 
@@ -139,6 +136,7 @@ function setupSnappedImage(editedImageURL) {
     // Show buttons only after snapping
     downloadButton.classList.remove("hidden");
     saveProjectButton.classList.remove("hidden");
+    toggleColorChangeMapButton.classList.remove("hidden")
 }
 
 function populateBlockValue(img) {
@@ -216,12 +214,11 @@ uploadInput?.addEventListener("change", async (event) => {
         localStorage.setItem("blockSize", blockSize);
         console.log(`LocalStorage updated with block size: ${blockSizeInput.value} after upload`);
 
-        // Auto-snap image to grid
+        // auto-snap image to grid
         await snapToGrid(blockSize);
         downloadButton.classList.remove("hidden");
         saveProjectButton.classList.remove("hidden");
-
-        // Update button behavior
+        openSketchButton.classList.remove("hidden");
         openSketchButton.href = "#"; // to stop the button from calling id-specific endpoint
     };
 
