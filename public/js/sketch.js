@@ -7,7 +7,7 @@ const eraserButton = document.getElementById("eraserButton");
 const undoButton = document.getElementById("undoButton");
 const resetButton = document.getElementById("resetButton");
 const colorPalette = document.getElementById("colorPalette");
-const saveButton = document.getElementById("saveButton");
+const saveProjectButton = document.getElementById("saveProjectButton");
 const downloadButton = document.getElementById("downloadButton");
 const imageCanvas = document.getElementById("imageCanvas");
 const gridCanvas = document.getElementById("gridCanvas");
@@ -61,7 +61,8 @@ const loadEditedImage = async () => {
 
 // Draw snapping grid
 const drawGrid = () => {
-    gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height); // Clear previous grid
+    // clear previous grid
+    gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height); 
     gridCtx.save();
     gridCtx.strokeStyle = "rgba(255, 255, 255, 0.3)";
     gridCtx.lineWidth = 1;
@@ -192,11 +193,11 @@ const eraseBlock = (x, y) => {
         x,
         y,
         blockSize,
-        blockSize, // Source position and size
+        blockSize, // origin position and size
         x,
         y,
         blockSize,
-        blockSize // Target position and size
+        blockSize // target position and size
     );
 };
 
@@ -306,38 +307,45 @@ eraserButton.addEventListener("click", (e) => {
     eraserButton.textContent = isErasing ? "Drawing Mode" : "Eraser";
 });
 
-saveButton.addEventListener("click", async (e) => {
-    e.preventDefault();
+// save the final project as both final and original image for gallery
+saveProjectButton?.addEventListener("click", async () => {
     const blob = await new Promise((resolve) =>
         imageCanvas.toBlob(resolve, "image/png")
     );
-
+    const storedBlockSize = parseInt(localStorage.getItem("blockSize"), 10) || 16;
+    const storedPaletteSize = parseInt(localStorage.getItem("paletteSize"), 10) || 128;
     const formData = new FormData();
-    formData.append("project_id", projectId);
-    formData.append("edited_image", blob);
-
+    formData.append("original_image", new File([blob], "original.png"));
+    formData.append("edited_image", new File([blob], "edited.png"));
+    formData.append("block_size", storedBlockSize);
+    formData.append("palette_size", storedPaletteSize);
+    if (projectId) formData.append("project_id", projectId);
     try {
         const response = await fetch("/projects", {
             method: "POST",
             body: formData,
         });
-
-        if (response.ok) {
-            alert("Project saved successfully!");
-        } else {
-            alert("Failed to save project.");
+        if (!response.ok) {
+            throw new Error("Failed to save the project");
         }
-    } catch (err) {
-        console.error("Error saving project:", err);
-        alert("An error occurred while saving the project.");
+        const result = await response.json();
+        if (result.project_id) {
+            console.log("Project saved successfully:", result);
+            projectId = result.project_id; // Update ID for later saves
+        } else {
+            console.error("Invalid response: missing project ID");
+        }
+    } catch (error) {
+        console.error("Error saving the project:", error);
     }
 });
+
 
 downloadButton.addEventListener("click", (e) => {
     e.preventDefault();
     const link = document.createElement("a");
     link.href = imageCanvas.toDataURL("image/png");
-    link.download = "edited_image.png";
+    link.download = `piksul.png`;
     link.click();
 });
 
