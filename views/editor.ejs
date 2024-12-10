@@ -37,11 +37,14 @@
       <label for="paletteSizeSelect">Palette Size: </label>
       <select id="paletteSizeSelect">
         <option value="" <%= project.palette_size ? "" : "selected" %>>None</option>
+        <option value="2" <%= project.palette_size == 2 ? "selected" : "" %>>2 Colors</option>
+        <option value="3" <%= project.palette_size == 3 ? "selected" : "" %>>3 Colors</option>
+        <option value="4" <%= project.palette_size == 4 ? "selected" : "" %>>4 Colors</option>
+        <option value="8" <%= project.palette_size == 8 ? "selected" : "" %>>8 Colors</option>
         <option value="16" <%= project.palette_size == 16 ? "selected" : "" %>>16 Colors</option>
         <option value="32" <%= project.palette_size == 32 ? "selected" : "" %>>32 Colors</option>
         <option value="64" <%= project.palette_size == 64 ? "selected" : "" %>>64 Colors</option>
         <option value="128" <%= project.palette_size == 128 ? "selected" : "" %>>128 Colors</option>
-        <option value="256" <%= project.palette_size == 256 ? "selected" : "" %>>256 Colors</option>
       </select>
     </div>
     
