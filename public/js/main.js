@@ -235,11 +235,6 @@ uploadInput?.addEventListener("change", async (event) => {
 openSketchButton?.addEventListener("click", (e) => {
     // Check if href /sketch/project.id was replaced by #
     if (openSketchButton.getAttribute("href") === "#") {
-        // Make sure new project available to open
-        if (!localStorage.getItem("editedImage")) {
-            alert("No new project to open in sketch.");
-            return;
-        }
         // Redirect sketch page
         window.location.href = "/sketch/new";
     }
