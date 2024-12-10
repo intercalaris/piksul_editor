@@ -1,5 +1,5 @@
 const uploadInput = document.getElementById("upload");
-const snapButton = document.getElementById("snapButton");
+// const snapButton = document.getElementById("snapButton");
 const downloadButton = document.getElementById("downloadButton");
 const blockSizeInput = document.getElementById("blockSizeInput");
 // const toleranceInput = document.getElementById('toleranceInput');
@@ -11,10 +11,9 @@ const startProjectButton = document.getElementById("startProjectButton");
 const saveProjectButton = document.getElementById("saveProjectButton");
 const openProjectButtons = document.querySelectorAll(".open-project");
 const deleteProjectButtons = document.querySelectorAll(".delete-project");
-const viewSavedProjectsButton = document.getElementById(
-    "viewSavedProjectsButton"
-);
+const viewSavedProjectsButton = document.getElementById("viewSavedProjectsButton");
 const paletteSizeSelect = document.getElementById("paletteSizeSelect");
+const openSketchButton  = document.getElementById("open-sketch")
 let originalImage = null;
 let originalImageURL = null;
 let editedImageURL = null;
@@ -173,7 +172,15 @@ uploadInput?.addEventListener("change", async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Reset states
+    // Reset data attributes and sketch href (diff endpoint called)
+    const editorMain = document.getElementById("editor");
+    editorMain.setAttribute("data-project-id", "");
+    editorMain.setAttribute("data-original-image", "");
+    editorMain.setAttribute("data-block-size", "");
+    editorMain.setAttribute("data-palette-size", "");
+    openSketchButton.href = "/sketch/new";
+
+    // Reset UI state
     originalFileName = file.name.split(".")[0];
     projectId = null;
     editedImageURL = null;
@@ -181,26 +188,32 @@ uploadInput?.addEventListener("change", async (event) => {
     toggleColorChangeMapButton.textContent = "Show Color Change Map";
     colorChangePositions = [];
     divisor.style.backgroundImage = "";
+    paletteSizeSelect.value = "";
     downloadButton.classList.add("hidden");
     saveProjectButton.classList.add("hidden");
 
     // Load new image
     const originalImageURL = URL.createObjectURL(file);
-    originalBlob = await fetch(originalImageURL).then((res) => res.blob()); // Save uploaded image blob
-    await setupOriginalImage(
-        originalImageURL,
-        document.querySelector("#comparison figure")
-    );
+    originalBlob = await fetch(originalImageURL).then((res) => res.blob());
+    await setupOriginalImage(originalImageURL, document.querySelector("#comparison figure"));
 
     const img = new Image();
-    img.onload = () => {
+    img.onload = async () => {
         controls.classList.remove("hidden");
         comparison.classList.remove("hidden");
-        snapButton.classList.remove("hidden");
-        populateBlockValue(img);
+
+        // Estimate and update block size
+        const blockSize = populateBlockValue(img);
+        blockSizeInput.value = blockSize;
+
+        // auto-snap image to grid
+        await snapToGrid(blockSize);
+        downloadButton.classList.remove("hidden");
+        saveProjectButton.classList.remove("hidden");
     };
     img.src = originalImageURL;
 });
+
 
 saveProjectButton?.addEventListener("click", async () => {
     const formData = new FormData();
@@ -229,13 +242,14 @@ saveProjectButton?.addEventListener("click", async () => {
     }
 });
 
-snapButton?.addEventListener("click", snapButtonClick);
+blockSizeInput?.addEventListener("input", blockSizeChange);
 
-async function snapButtonClick() {
+
+async function blockSizeChange() {
     const userBlockSize =
         parseInt(blockSizeInput.value, 10) || estimatedBlockSize;
     try {
-        await snapToGrid(userBlockSize); // wait for snapping before applying palette size
+        await snapToGrid(userBlockSize);
         paletteSizeChange();
         downloadButton.classList.remove("hidden");
         saveProjectButton.classList.remove("hidden");
@@ -243,21 +257,6 @@ async function snapButtonClick() {
         console.error("Error during snapping or palette size change:", error);
     }
 }
-
-uploadInput?.addEventListener("change", async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    originalFileName = file.name.split(".")[0];
-    editedImageURL = null;
-    colorChangePositions = [];
-    divisor.style.backgroundImage = "";
-    paletteSizeSelect.value = ""; // Reset palette selection
-    originalImageURL = URL.createObjectURL(file);
-    await setupOriginalImage(
-        originalImageURL,
-        document.querySelector("#comparison figure")
-    );
-});
 
 downloadButton?.addEventListener("click", () => {
     if (editedImageURL) {
@@ -305,12 +304,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                 );
                 controls.classList.remove("hidden");
                 comparison.classList.remove("hidden");
-                snapButton.classList.remove("hidden");
+                // snapButton.classList.remove("hidden");
 
                 // Populate block size
                 blockSizeInput.value = blockSize;
                 paletteSizeSelect.value = paletteSize;
-                snapButtonClick();
+                blockSizeChange();
             } catch (error) {
                 console.error("Error during editor setup:", error);
             }
@@ -512,80 +511,65 @@ function colorsAreDifferent(color1, color2, tolerance) {
 
 let snappedImageURL = null;
 
-function snapToGrid(blockSize) {
+async function snapToGrid(blockSize) {
     console.log("Snapping to Grid with size:", blockSize, "and tolerance: 30");
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     const img = new Image();
 
-    return new Promise((resolve, reject) => {
+    // Wrap image loading in a Promise
+    await new Promise((resolve, reject) => {
         img.src = originalImageURL; // Always start from the original image
+        img.onload = resolve;
+        img.onerror = () => {
+            console.error("Failed to load the original image for snapping.");
+            reject(new Error("Failed to load the original image for snapping."));
+        };
+    });
 
-        img.onload = async () => {
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    const width = canvas.width;
+    const height = canvas.height;
 
-            const imageData = ctx.getImageData(
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
-            const data = imageData.data;
-            const width = canvas.width;
-            const height = canvas.height;
+    for (let y = 0; y < height; y += blockSize) {
+        for (let x = 0; x < width; x += blockSize) {
+            const centerX = Math.min(x + Math.floor(blockSize / 2), width - 1);
+            const centerY = Math.min(y + Math.floor(blockSize / 2), height - 1);
+            const index = (centerY * width + centerX) * 4;
+            const r = data[index];
+            const g = data[index + 1];
+            const b = data[index + 2];
+            const a = data[index + 3];
 
-            for (let y = 0; y < height; y += blockSize) {
-                for (let x = 0; x < width; x += blockSize) {
-                    const centerX = Math.min(
-                        x + Math.floor(blockSize / 2),
-                        width - 1
-                    );
-                    const centerY = Math.min(
-                        y + Math.floor(blockSize / 2),
-                        height - 1
-                    );
-                    const index = (centerY * width + centerX) * 4;
-                    const r = data[index];
-                    const g = data[index + 1];
-                    const b = data[index + 2];
-                    const a = data[index + 3];
-
-                    for (let offsetY = 0; offsetY < blockSize; offsetY++) {
-                        for (let offsetX = 0; offsetX < blockSize; offsetX++) {
-                            const pixelX = x + offsetX;
-                            const pixelY = y + offsetY;
-                            if (pixelX < width && pixelY < height) {
-                                const newIndex = (pixelY * width + pixelX) * 4;
-                                data[newIndex] = r;
-                                data[newIndex + 1] = g;
-                                data[newIndex + 2] = b;
-                                data[newIndex + 3] = a;
-                            }
-                        }
+            for (let offsetY = 0; offsetY < blockSize; offsetY++) {
+                for (let offsetX = 0; offsetX < blockSize; offsetX++) {
+                    const pixelX = x + offsetX;
+                    const pixelY = y + offsetY;
+                    if (pixelX < width && pixelY < height) {
+                        const newIndex = (pixelY * width + pixelX) * 4;
+                        data[newIndex] = r;
+                        data[newIndex + 1] = g;
+                        data[newIndex + 2] = b;
+                        data[newIndex + 3] = a;
                     }
                 }
             }
+        }
+    }
 
-            ctx.putImageData(imageData, 0, 0);
-            snappedImageURL = canvas.toDataURL("image/png"); // Save snapped image URL
-            editedImageURL = snappedImageURL; // Start with snapped image for display
-
-            // Update `editedBlob` after snapping
-            editedBlob = await fetch(editedImageURL).then((res) => res.blob());
-            setupSnappedImage(editedImageURL);
-            resolve(); // Resolve the Promise after snapping is complete
-        };
-
-        img.onerror = () => {
-            console.error("Failed to load the original image for snapping.");
-            reject(
-                new Error("Failed to load the original image for snapping.")
-            );
-        };
-    });
+    ctx.putImageData(imageData, 0, 0);
+    snappedImageURL = canvas.toDataURL("image/png"); // Save snapped image URL
+    editedImageURL = snappedImageURL; // Start with snapped image for display
+    // Update editedBlob after snapping
+    editedBlob = await fetch(editedImageURL).then((res) => res.blob());
+    setupSnappedImage(editedImageURL);
+    console.log("Snapping complete.");
 }
+
 
 function applyQuantizationToImage(paletteSize) {
     if (!snappedImageURL) {

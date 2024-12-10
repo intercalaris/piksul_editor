@@ -31,6 +31,10 @@ module.exports = {
       res.status(500).send("Error loading project");
     }
   },
+  openNewInSketch: async (req, res) => {
+    
+  },
+
   openInSketch: async (req, res) => {
     const id = req.params.id;
     try {
@@ -58,7 +62,7 @@ module.exports = {
         res.status(500).send("Error loading project");
     }
   },
-
+  
 
   getGallery: async (req, res) => {
     try {
