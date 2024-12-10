@@ -1,8 +1,7 @@
 const sketch = document.getElementById("sketch");
 const projectId = sketch.dataset.projectId;
 const editedImageFilename = sketch.dataset.editedImage;
-const editedImageUrl = `/gallery/image/${editedImageFilename}`;
-const blockSize = parseInt(sketch.dataset.blockSize, 10);
+let blockSize = parseInt(sketch.dataset.blockSize, 10);
 const colorPicker = document.getElementById("colorPicker");
 const eraserButton = document.getElementById("eraserButton");
 const undoButton = document.getElementById("undoButton");
@@ -18,36 +17,95 @@ let isDrawing = false;
 let isErasing = false;
 let currentColor = colorPicker.value;
 let originalImage;
-let undoStack = []; // For undo functionality
+let undoStack = []; 
 
-// Load edited image onto canvas
 const loadEditedImage = async () => {
-    if (!editedImageFilename) {
-        console.error("Edited image filename is missing.");
+    let img = new Image();
+    let imageUrl;
+
+    // Prioritize loading from localStorage
+    const localEditedImage = localStorage.getItem("editedImage");
+
+    if (localEditedImage) {
+        imageUrl = localEditedImage;
+        console.log("Loading image from localStorage.");
+
+        // Retrieve and set block size from localStorage
+        const storedBlockSize = parseInt(localStorage.getItem("blockSize"), 10);
+        if (storedBlockSize && !isNaN(storedBlockSize)) {
+            blockSize = storedBlockSize;
+            console.log(`Block size set to: ${blockSize}`);
+        } else {
+            console.warn("Block size not found in localStorage, using default (16).");
+            blockSize = 16;
+        }
+
+        // Retrieve and set palette size from localStorage (if needed)
+        const storedPaletteSize = parseInt(localStorage.getItem("paletteSize"), 10);
+        if (storedPaletteSize && !isNaN(storedPaletteSize)) {
+            // If palette size affects the Sketch page, apply it here
+            // For example, you might need to call a function to apply the palette
+            console.log(`Palette size set to: ${storedPaletteSize}`);
+            // Example: applyPaletteSize(storedPaletteSize);
+        }
+
+    }
+    // If no edited image in localStorage, fall back to project data
+    else if (projectId && editedImageFilename) {
+        imageUrl = `/gallery/image/${editedImageFilename}`;
+        console.log("Loading image from database for project ID:", projectId);
+
+        // Retrieve and set block size from localStorage (optional)
+        const storedBlockSize = parseInt(localStorage.getItem("blockSize"), 10);
+        if (storedBlockSize && !isNaN(storedBlockSize)) {
+            blockSize = storedBlockSize;
+            console.log(`Block size set to: ${blockSize}`);
+        } else {
+            console.warn("Block size not found in localStorage, using default (16).");
+            blockSize = 16;
+        }
+    }
+    else {
+        console.error("No image source found for Sketch page.");
         return;
     }
-    const img = new Image();
-    img.src = editedImageUrl;
+
+    img.src = imageUrl;
 
     await new Promise((resolve, reject) => {
         img.onload = () => {
+            // Set canvas dimensions to match the image
             imageCanvas.width = img.width;
             imageCanvas.height = img.height;
-            gridCanvas.width = imageCanvas.width;
-            gridCanvas.height = imageCanvas.height;
+            gridCanvas.width = img.width;
+            gridCanvas.height = img.height;
+
+            // Draw the image onto the canvas
             imageCtx.drawImage(img, 0, 0);
+
+            // Draw the grid overlay
             drawGrid();
-            originalImage = img; // Save original image for erasing/resetting
-            saveStateForUndo(); // Save initial state
-            extractTopColors(); // Extract top colors for the palette
+
+            // Save the original image for reset functionality
+            originalImage = img;
+
+            // Save the current state for undo functionality
+            saveStateForUndo();
+
+            // Extract and display the top colors
+            extractTopColors();
+
+            console.log("Image loaded successfully into Sketch page.");
             resolve();
         };
         img.onerror = (e) => {
-            console.error("Error loading edited image:", e);
+            console.error("Error loading image into Sketch page:", e);
             reject(e);
         };
     });
 };
+
+
 
 // Draw snapping grid
 const drawGrid = () => {
@@ -330,6 +388,7 @@ downloadButton.addEventListener("click", (e) => {
     link.download = "edited_image.png";
     link.click();
 });
+
 
 // Initialize
 loadEditedImage().catch((err) =>

@@ -26,7 +26,7 @@ router.post("/projects",
     mainController.createOrUpdateProject);   
 
 router.get("/sketch/:id", mainController.openInSketch);
-router.get("/sketch/new", mainController.openNewInSketch);
+// router.get("/sketch/new", mainController.openNewInSketch);
 
 
 router.delete("/projects/:id", mainController.deleteProject);

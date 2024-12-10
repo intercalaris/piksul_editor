@@ -13,7 +13,7 @@ const openProjectButtons = document.querySelectorAll(".open-project");
 const deleteProjectButtons = document.querySelectorAll(".delete-project");
 const viewSavedProjectsButton = document.getElementById("viewSavedProjectsButton");
 const paletteSizeSelect = document.getElementById("paletteSizeSelect");
-const openSketchButton  = document.getElementById("open-sketch")
+const openSketchButton = document.getElementById("open-sketch")
 let originalImage = null;
 let originalImageURL = null;
 let editedImageURL = null;
@@ -120,7 +120,6 @@ function setupOriginalImage(url, imgElement) {
             comparison.style.aspectRatio = `${aspectRatio}`;
             imgElement.style.backgroundImage = `url(${url})`;
             originalImageURL = url; // Save the original image URL
-            console.log("Original image loaded successfully.");
             resolve();
         };
         img.onerror = () => {
@@ -140,13 +139,11 @@ function setupSnappedImage(editedImageURL) {
     // Show buttons only after snapping
     downloadButton.classList.remove("hidden");
     saveProjectButton.classList.remove("hidden");
-    console.log("Snapped image setup complete.");
 }
 
 function populateBlockValue(img) {
     const blockSize = estimateBlockSize(img);
     blockSizeInput.value = blockSize;
-    console.log("Estimated block size:", blockSize);
     return blockSize;
 }
 
@@ -172,13 +169,12 @@ uploadInput?.addEventListener("change", async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Reset data attributes and sketch href (diff endpoint called)
+    // Reset data attributes
     const editorMain = document.getElementById("editor");
     editorMain.setAttribute("data-project-id", "");
     editorMain.setAttribute("data-original-image", "");
     editorMain.setAttribute("data-block-size", "");
     editorMain.setAttribute("data-palette-size", "");
-    openSketchButton.href = "/sketch/new";
 
     // Reset UI state
     originalFileName = file.name.split(".")[0];
@@ -192,10 +188,22 @@ uploadInput?.addEventListener("change", async (event) => {
     downloadButton.classList.add("hidden");
     saveProjectButton.classList.add("hidden");
 
-    // Load new image
-    const originalImageURL = URL.createObjectURL(file);
-    originalBlob = await fetch(originalImageURL).then((res) => res.blob());
-    await setupOriginalImage(originalImageURL, document.querySelector("#comparison figure"));
+    // Load new image as Object URL
+    const objectURL = URL.createObjectURL(file);
+    originalBlob = await fetch(objectURL).then((res) => res.blob());
+    await setupOriginalImage(objectURL, document.querySelector("#comparison figure"));
+
+    // Convert Object URL to Data URL
+    const dataURL = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+
+    // Store Data URL in localStorage
+    localStorage.setItem("editedImage", dataURL);
+    console.log(`LocalStorage updated with edited image after upload: ${dataURL}`);
 
     const img = new Image();
     img.onload = async () => {
@@ -205,15 +213,37 @@ uploadInput?.addEventListener("change", async (event) => {
         // Estimate and update block size
         const blockSize = populateBlockValue(img);
         blockSizeInput.value = blockSize;
+        localStorage.setItem("blockSize", blockSize);
+        console.log(`LocalStorage updated with block size: ${blockSizeInput.value} after upload`);
 
-        // auto-snap image to grid
+        // Auto-snap image to grid
         await snapToGrid(blockSize);
         downloadButton.classList.remove("hidden");
         saveProjectButton.classList.remove("hidden");
+
+        // Update button behavior
+        openSketchButton.href = "#"; // to stop the button from calling id-specific endpoint
     };
-    img.src = originalImageURL;
+
+    img.src = objectURL;
+    // No longer set 'editedImage' to object URL
+    // localStorage.setItem("editedImage", originalImageURL);
+    // console.log(`LocalStorage updated with edited image after upload`);
 });
 
+
+openSketchButton?.addEventListener("click", (e) => {
+    // Check if href /sketch/project.id was replaced by #
+    if (openSketchButton.getAttribute("href") === "#") {
+        // Make sure new project available to open
+        if (!localStorage.getItem("editedImage")) {
+            alert("No new project to open in sketch.");
+            return;
+        }
+        // Redirect sketch page
+        window.location.href = "/sketch/new";
+    }
+});
 
 saveProjectButton?.addEventListener("click", async () => {
     const formData = new FormData();
@@ -246,13 +276,14 @@ blockSizeInput?.addEventListener("input", blockSizeChange);
 
 
 async function blockSizeChange() {
-    const userBlockSize =
-        parseInt(blockSizeInput.value, 10) || estimatedBlockSize;
+    const userBlockSize = parseInt(blockSizeInput.value, 10) || estimatedBlockSize;
     try {
         await snapToGrid(userBlockSize);
         paletteSizeChange();
         downloadButton.classList.remove("hidden");
         saveProjectButton.classList.remove("hidden");
+        localStorage.setItem("blockSize", userBlockSize);
+        console.log(`LocalStorage updated with new block size: ${userBlockSize}`);
     } catch (error) {
         console.error("Error during snapping or palette size change:", error);
     }
@@ -286,6 +317,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         const originalImageFilename = editorMain.dataset.originalImage;
         const blockSize = editorMain.dataset.blockSize;
         const paletteSize = editorMain.dataset.paletteSize;
+        
         if (projectId && originalImageFilename) {
             const imagePath = `/gallery/image/${originalImageFilename}`;
 
@@ -298,10 +330,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 originalBlob = await response.blob(); // Update originalBlob
 
                 // Load the image into the editor
-                await setupOriginalImage(
-                    imagePath,
-                    document.querySelector("#comparison figure")
-                );
+                await setupOriginalImage(imagePath, document.querySelector("#comparison figure"));
                 controls.classList.remove("hidden");
                 comparison.classList.remove("hidden");
                 // snapButton.classList.remove("hidden");
@@ -309,6 +338,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Populate block size
                 blockSizeInput.value = blockSize;
                 paletteSizeSelect.value = paletteSize;
+                localStorage.setItem("editedImage", imagePath);
+                localStorage.setItem("blockSize", blockSize);
+                localStorage.setItem("paletteSize", paletteSize);
+                console.log(`LocalStorage initialized from gallery project." Block size: ${blockSizeInput.value}, Palette Size ${paletteSizeSelect.value}`);
                 blockSizeChange();
             } catch (error) {
                 console.error("Error during editor setup:", error);
@@ -321,12 +354,15 @@ paletteSizeSelect?.addEventListener("change", paletteSizeChange);
 
 function paletteSizeChange() {
     const paletteSize = parseInt(paletteSizeSelect.value, 10);
+    localStorage.setItem("paletteSize", paletteSize);
+    console.log(`LocalStorage updated with palette size: ${paletteSize}`);
     if (isNaN(paletteSize)) {
         // "None" selected, reset to regular snapped image
         if (snappedImageURL) {
             editedImageURL = snappedImageURL;
             setupSnappedImage(editedImageURL);
-            console.log("Palette reset to snapped image.");
+            localStorage.setItem("editedImage", editedImageURL);
+            console.log(`LocalStorage updated with edited image (no quantization)`);
         } else {
             console.warn("No snapped image to reset to.");
         }
@@ -379,8 +415,6 @@ function estimateBlockSize(img) {
 
     analyzeLine(height, width, (y, x) => (y * width + x) * 4); // Horizontal
     analyzeLine(width, height, (x, y) => (y * width + x) * 4); // Vertical
-
-    console.log(`Total color changes: ${colorChanges.length}`);
     colorChanges.sort((a, b) => a - b);
     const lengthThreshold =
         colorChanges[Math.floor(0.75 * colorChanges.length)];
@@ -494,10 +528,6 @@ function evaluateSnapping(img, blockSize) {
             totalDeviation += cellDeviation * contrastWeight;
         }
     }
-
-    console.log(
-        `Total deviation for block size ${blockSize}: ${totalDeviation}`
-    );
     return totalDeviation;
 }
 
@@ -567,8 +597,12 @@ async function snapToGrid(blockSize) {
     // Update editedBlob after snapping
     editedBlob = await fetch(editedImageURL).then((res) => res.blob());
     setupSnappedImage(editedImageURL);
-    console.log("Snapping complete.");
+
+    // Store snapped image as Data URL
+    localStorage.setItem("editedImage", editedImageURL);
+    console.log(`LocalStorage updated with edited image after snapping: ${editedImageURL}`);
 }
+
 
 
 function applyQuantizationToImage(paletteSize) {
@@ -581,30 +615,23 @@ function applyQuantizationToImage(paletteSize) {
     const img = new Image();
     img.src = snappedImageURL; // Use unaltered snapped image
     img.onload = async () => {
-        console.log("Quantization started with snapped image.");
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         canvas.width = img.width;
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        console.log(`Canvas dimensions: ${canvas.width}x${canvas.height}`);
 
         try {
             const rgbQuant = new RgbQuant({ colors: paletteSize });
-            console.log("Sampling image data for quantization...");
             rgbQuant.sample(imageData.data);
             const reducedData = rgbQuant.reduce(imageData.data, 2); // Request palette-indexed array
             const palette = rgbQuant.palette(true); // Get palette as RGB triplets
-
             if (!palette || palette.length === 0) {
                 console.error("RgbQuant failed to generate a palette.");
                 return;
             }
-            const reducedImageData = ctx.createImageData(
-                canvas.width,
-                canvas.height
-            );
+            const reducedImageData = ctx.createImageData(canvas.width, canvas.height);
             for (let i = 0; i < reducedData.length; i++) {
                 const paletteIndex = reducedData[i];
                 const offset = i * 4;
@@ -631,17 +658,17 @@ function applyQuantizationToImage(paletteSize) {
             }
 
             ctx.putImageData(reducedImageData, 0, 0);
-            editedImageURL = canvas.toDataURL("image/png"); // Update the quantized image URL
+            editedImageURL = canvas.toDataURL("image/png"); // Update quantized image URL
 
             // Update editedBlob after quantization
             editedBlob = await fetch(editedImageURL).then((res) => res.blob());
             setupSnappedImage(editedImageURL);
-            console.log(`Image quantized to ${paletteSize} colors.`);
+            localStorage.setItem("editedImage", editedImageURL);
+            console.log(`LocalStorage updated with edited image after quantization: ${editedImageURL}`);
         } catch (err) {
             console.error("Error during quantization:", err);
         }
     };
-
-    img.onerror = () =>
-        console.error("Failed to load the snapped image for quantization.");
+    img.onerror = () => console.error("Failed to load the snapped image for quantization.");
 }
+
