@@ -29,7 +29,7 @@ body {
 
 header {
     background-color: #1e1e1e;
-    padding: 10px 20px;
+    padding: 5px 20px;
     display: flex;
     justify-content: space-between;
     border-bottom: 1px solid #333;
@@ -120,7 +120,7 @@ canvas {
   display: inline-block;
   text-align: center;
   transition: all 0.2s ease;
-  padding: 9px 11px;
+  padding: 8px 11px;
   font-size: 16px;
   color: #fff;
   text-decoration: none;
@@ -129,7 +129,7 @@ canvas {
   box-shadow: 0 0 5px rgba(255, 255, 255, 0.2), 0 0 8px rgba(255, 255, 255, 0.2);
   border: 1.5px solid #fff;
   border-radius: 5px;
-  margin: 8px;
+  margin: 4px 8px;
 }
 .button:hover {
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.7), 0 0 15px rgba(255, 255, 255, 0.2);
