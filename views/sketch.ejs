@@ -26,22 +26,20 @@
 		data-palette-size="<%= project.palette_size || '' %>">
 
     <div class="editor-container">
-        <div class="canvas-container">
+		<div id="canvas-container" class="canvas-container">
             <canvas id="imageCanvas"></canvas>
             <canvas id="gridCanvas"></canvas>
         </div>
           
 		<div class="tools-container">
-			<div class="tool">
+			<div id = "palette-container" class="tool">
 				<label for="colorPicker">Choose Color:</label>
 				<input type="color" id="colorPicker" value="#000000">
 				<div id="colorPalette" class="color-palette">
 				</div>	
 			</div>
-			<div class="tool">
+			<div id = "controls-container" class="tool">
 				<a href="#" id="eraserButton" class="button eraser"><span>Eraser</span></a>
-			</div>
-			<div class="tool">
 				<a href="#" id="undoButton" class="button undo"><span>Undo</span></a>
 				<a href="#" id="resetButton" class="button reset"><span>Reset</span></a>
 			</div>

@@ -10,6 +10,7 @@ const colorPalette = document.getElementById("colorPalette");
 const saveProjectButton = document.getElementById("saveProjectButton");
 const downloadButton = document.getElementById("downloadButton");
 const imageCanvas = document.getElementById("imageCanvas");
+const canvasContainer = document.getElementById("canvas-container");
 const gridCanvas = document.getElementById("gridCanvas");
 const imageCtx = imageCanvas.getContext("2d");
 const gridCtx = gridCanvas.getContext("2d");
@@ -43,12 +44,12 @@ const loadEditedImage = async () => {
             imageCanvas.height = img.height;
             gridCanvas.width = imageCanvas.width;
             gridCanvas.height = imageCanvas.height;
-            imageCtx.drawImage(img, 0, 0);
+            imageCtx.drawImage(img, 0, 0);          
             drawGrid();
             originalImage = img;
             saveStateForUndo();
             extractTopColors();
-            console.log("Image loaded successfully.");
+            console.log("Image loaded.");
             resolve();
         };
         img.onerror = (e) => {
@@ -56,6 +57,7 @@ const loadEditedImage = async () => {
             reject(e);
         };
     });
+
 };
 
 
@@ -144,9 +146,7 @@ const extractTopColors = () => {
       const b = imageData[i + 2];
       const a = imageData[i + 3]; // Alpha channel
       if (a === 0) continue; // Ignore transparent pixels
-
       const color = `rgb(${r},${g},${b})`;
-
       colorCounts[color] = (colorCounts[color] || 0) + 1;
   }
 
@@ -164,7 +164,7 @@ const extractTopColors = () => {
       colorDiv.style.backgroundColor = color;
       colorDiv.addEventListener("click", () => {
           currentColor = color; // Update current color on selection
-          colorPicker.value = rgbToHex(color); // Sync with the color picker
+          colorPicker.value = rgbToHex(color); // Sync with color picker
       });
       colorPalette.appendChild(colorDiv);
   });

@@ -43,16 +43,15 @@ body {
   display: inline-block;
   text-align: center;
   transition: all 0.2s ease;
-  padding: 9px 11px;
-  font-size: 16px;
+  padding: 0.9rem 2rem;
   color: #fff;
   text-decoration: none;
   cursor: pointer;
   background: rgba(23, 10, 103, 0.141);
-  box-shadow: 0 0 9px rgba(255, 255, 255, 0.2), 0 0 12px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.2), 0 0 8px rgba(255, 255, 255, 0.2);
   border: 2px solid #fff;
   border-radius: 5px;
-  margin: 8px;
+  margin: 4px 8px;
 }
 .button:hover {
   box-shadow: 0 0 8px rgba(255, 255, 255, 0.7), 0 0 15px rgba(255, 255, 255, 0.2);

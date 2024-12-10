@@ -24,12 +24,12 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100%;
-    font-size: 2rem;
+    font-size: 1.7rem;
   }
 
 header {
     background-color: #1e1e1e;
-    padding: 5px 20px;
+    padding: 5px 10px;
     display: flex;
     justify-content: space-between;
     border-bottom: 1px solid #333;
@@ -39,8 +39,9 @@ header .navigation {
     display: flex;
 }
 
-header .users {
-    display: flex;
+header .button {
+    font-size: 1.3rem;
+    padding: 0.5rem 1rem;
 }
 
 
@@ -49,16 +50,17 @@ main {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px;
+    padding: 20px 20px 0 20px;
 }
 
 .editor-container {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 20px;
+    gap: 30px;
     width: 100%;
     max-width: 1200px;
+
 }
 
 .canvas-container {
@@ -74,8 +76,8 @@ canvas {
     grid-area: 1 / 1;
     border: 1px solid #444;
     background-color: #121212;
-    max-height: 80dvh;
-    max-width: 90dvw;
+    max-height: 82dvh;
+    max-width: 87dvw;
 }
 
 #gridCanvas {
@@ -85,7 +87,7 @@ canvas {
 
 /* Tools Container */
 .tools-container {
-    flex: 0 1 14rem;
+    flex: 0 1 16rem;
     display: flex;
     flex-direction: column;
     gap: 15px;
@@ -99,7 +101,6 @@ canvas {
 
 .tool label {
     margin-bottom: 5px;
-    font-size: 14px;
     color: #e0e0e0;
 }
 
@@ -120,8 +121,7 @@ canvas {
   display: inline-block;
   text-align: center;
   transition: all 0.2s ease;
-  padding: 8px 11px;
-  font-size: 16px;
+  padding: 0.8rem 1.9rem;
   color: #fff;
   text-decoration: none;
   cursor: pointer;
@@ -189,6 +189,8 @@ canvas {
     border: 1px solid #333;
     border-radius: 5px;
     background-color: #1e1e1e;
+    justify-content: center;
+    justify-items: center;
 }
 
 .color-swatch {
@@ -220,10 +222,15 @@ canvas {
     .tool {
         flex: 1 1 45%;
         text-align: center;
+        justify-content: center;
     }
-
+    #palette-container {
+        flex: 0 0 auto;
+    }
+    #controls-container {
+        /* justify-content: end; */
+    }
     .color-palette {
-        grid-template-columns: repeat(4, 1fr);
         width: 100%;
     }
 
