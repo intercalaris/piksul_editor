@@ -138,62 +138,31 @@ module.exports = {
         const originalImage = req.files.original_image[0];
         const editedImage = req.files.edited_image[0];
         const userId = req.user ? req.user.id : null; // Set userId to null if guest
-
+      
         try {
-            if (project_id) {
-                // Update existing project
-                const { originalImagePath, editedImagePath } =
-                    await ProjectModel.saveImages(
-                        project_id,
-                        originalImage,
-                        editedImage
-                    );
-                await ProjectModel.updateProject(
-                    project_id,
-                    originalImagePath,
-                    editedImagePath,
-                    block_size,
-                    palette_size,
-                    tolerance
-                );
-                res.json({
-                    project_id,
-                    message: "Project updated successfully",
-                });
-            } else {
-                // Insert a new project
-                const newProjectId = await ProjectModel.insertProject(
-                    block_size,
-                    palette_size,
-                    tolerance,
-                    userId
-                );
-                const { originalImagePath, editedImagePath } =
-                    await ProjectModel.saveImages(
-                        newProjectId,
-                        originalImage,
-                        editedImage
-                    );
-                await ProjectModel.updateProject(
-                    newProjectId,
-                    originalImagePath,
-                    editedImagePath,
-                    block_size,
-                    palette_size,
-                    tolerance
-                );
-                res.json({
-                    project_id: newProjectId,
-                    message: "Project saved successfully",
-                });
-            }
+          let id = project_id;
+      
+          // insert new project if no ID provided
+          if (!project_id) {
+            id = await ProjectModel.insertProject(block_size, palette_size, tolerance, userId);
+          }
+      
+          // save images and update project
+          const { originalImagePath, editedImagePath } = await ProjectModel.saveImages(id, originalImage, editedImage);
+          await ProjectModel.updateProject(id, originalImagePath, editedImagePath, block_size, palette_size, tolerance);
+      
+          res.json({
+            project_id: id,
+            message: project_id ? "Project updated successfully" : "Project created successfully",
+          });
         } catch (err) {
-            console.error("Error processing project:", err);
-            res.status(500).json({
-                error: "An error occurred while processing the project",
-            });
+          console.error("Error processing project:", err);
+          res.status(500).json({
+            error: "An error occurred while processing the project",
+          });
         }
-    },
+      },
+      
 
     deleteProject: async (req, res) => {
         const projectID = req.params.id;

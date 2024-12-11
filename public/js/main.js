@@ -9,7 +9,7 @@ const divisor = document.getElementById("divisor");
 const slider = document.getElementById("slider");
 const comparison = document.getElementById("comparison");
 const startProjectButton = document.getElementById("startProjectButton");
-const saveProjectButton = document.getElementById("saveProjectButton");
+const saveProjectButton = document.getElementById("save-project");
 // const openProjectButtons = document.querySelectorAll(".open-project");
 const deleteProjectButtons = document.querySelectorAll(".delete-project");
 const viewSavedProjectsButton = document.getElementById("viewSavedProjectsButton");
@@ -232,20 +232,20 @@ uploadInput?.addEventListener("change", async (event) => {
         downloadButton.classList.remove("hidden");
         saveProjectButton.classList.remove("hidden");
         openSketchButton.classList.remove("hidden");
-        openSketchButton.href = "#"; // to stop the button from calling id-specific endpoint
+        // openSketchButton.href = "#"; // to stop the button from calling id-specific endpoint
     };
 
     img.src = objectURL;
 });
 
 
-function openSketchClick(button) {
-    // Check if href /sketch/project.id was replaced by #
-    if (button.getAttribute("href") === "#") {
-        // Redirect to the new sketch page
-        window.location.href = "/sketch/new";
-    }
-}
+// function openSketchClick(button) {
+//     // Check if href /sketch/project.id was replaced by #
+//     if (button.getAttribute("href") === "#") {
+//         // Redirect to the new sketch page
+//         window.location.href = "/sketch/new";
+//     }
+// }
 
 // Open sketch from sketch ID button in editor
 openSketchButton?.addEventListener("click", () => {
@@ -273,7 +273,7 @@ saveProjectButton?.addEventListener("click", async () => {
         const result = await response.json();
         if (result.project_id) {
             console.log("Project saved successfully:", result);
-            projectId = result.project_id; // update ID for later saves
+            projectId = result.project_id; // update id for later saves
         } else {
             console.error("Invalid response: missing project ID");
         }
