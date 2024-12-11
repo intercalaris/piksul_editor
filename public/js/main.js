@@ -80,17 +80,17 @@ function drawColorChangeMap(img, changes) {
 
     ctx.fillStyle = "red";
     changes.forEach(({ x, y }) => {
-        ctx.fillRect(x, y, 1, 1); // Mark each pixel as red
+        ctx.fillRect(x, y, 1, 1); // Mark each pixel red
     });
 
     const overlay = document.querySelector("#comparison figure");
-    overlay.style.backgroundImage = `url(${canvas.toDataURL()})`; // Just update display
+    overlay.style.backgroundImage = `url(${canvas.toDataURL()})`;
 }
 
 toggleColorChangeMapButton?.addEventListener("click", async () => {
     const overlay = document.querySelector("#comparison figure");
     if (!isColorChangeMapVisible) {
-        // Show the color change map
+        // Show color change map
         const img = new Image();
         img.src = originalImageURL; // Use saved original URL
         img.onload = () => {
@@ -107,6 +107,10 @@ toggleColorChangeMapButton?.addEventListener("click", async () => {
         toggleColorChangeMapButton.textContent = "Show Color Change Map";
         isColorChangeMapVisible = false;
     }
+});
+
+window.addEventListener('resize', () => {
+    setupSnappedImage(editedImageURL);
 });
 
 function setupOriginalImage(url, imgElement) {

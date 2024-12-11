@@ -178,19 +178,12 @@ body {
 
 #editor {
     background: linear-gradient(to bottom right, #0a0c1c, #110233);
-	padding: 5rem;
+	padding: 4rem;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
     width: 100%;
 }
-#editor .action-buttons {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-}
-
 .file-icon {
     width: 2rem;
     height: auto;
@@ -210,14 +203,75 @@ body {
     white-space: nowrap;
 }
 
+#upload-container {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2rem;
+}
+
+#options-and-editor {
+	display: flex;
+	gap: 3rem;
+	justify-content: flex-start;
+}
+#options {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+#options .button {
+	padding: 0.5rem 1.3rem;
+}
+#controls {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+}
+
+#output-options {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+}
+
+input[type="number"],
+select#paletteSizeSelect {
+    font-family: inherit;
+    font-size: 2rem;
+    color: #fff;
+    background: rgba(46, 38, 93, 0.448);
+    border: 1.5px solid #fff;
+    border-radius: 5px;
+	padding: 0.5rem 1.3rem;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.2),
+                0 0 8px rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+input[type="number"]:hover,
+select#paletteSizeSelect:hover {
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.7),
+                0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+
+select#paletteSizeSelect option {
+    background-color: #0e0e2b; /*  dropdown background */
+    color: #fff;
+}
+
+
+
+
 
 
 #comparison {
-    width: 100vw;
-    max-width: 600px;
+    width: 40vw;
+    max-width: 50vw;
     height: auto;
     overflow: hidden;
-    margin-top: 20px;
     position: relative;
     aspect-ratio: 16/9;
 }

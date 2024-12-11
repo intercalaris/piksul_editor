@@ -29,44 +29,53 @@
     data-block-size="<%= project.block_size || '' %>"
     data-palette-size="<%= project?.palette_size || '' %>">
 
-    <div class="action-buttons">
-      <label for="upload" class="button file-button">
-        <span>Choose File</span>
-      </label>
-      <input type="file" id="upload" hidden>
-      <p id="get-started">Upload an image to get started.</p>   
-    </div>
+    <div id="options-and-editor">
 
-    <div id="controls" class="hidden">
-      <label for="blockSizeInput">Block Size: </label>
-      <input type="number" id="blockSizeInput" min="1" max="100">
-      <div id="palette-controls">
-        <label for="paletteSizeSelect">Palette Size: </label>
-        <select id="paletteSizeSelect">
-          <option value="" <%= project.palette_size ? "" : "selected" %>>None</option>
-          <option value="2" <%= project.palette_size == 2 ? "selected" : "" %>>2 Colors</option>
-          <option value="3" <%= project.palette_size == 3 ? "selected" : "" %>>3 Colors</option>
-          <option value="4" <%= project.palette_size == 4 ? "selected" : "" %>>4 Colors</option>
-          <option value="8" <%= project.palette_size == 8 ? "selected" : "" %>>8 Colors</option>
-          <option value="16" <%= project.palette_size == 16 ? "selected" : "" %>>16 Colors</option>
-          <option value="32" <%= project.palette_size == 32 ? "selected" : "" %>>32 Colors</option>
-          <option value="64" <%= project.palette_size == 64 ? "selected" : "" %>>64 Colors</option>
-          <option value="128" <%= project.palette_size == 128 ? "selected" : "" %>>128 Colors</option>
-        </select>
+      <div id="comparison" class="hidden">
+        <figure>
+          <div id="divisor"></div>
+        </figure>
+        <input type="range" min="0" max="100" value="50" id="slider">
       </div>
-    </div>
-    <a class="button hidden" id="toggleColorChangeMapButton">Show Color Change Map</a>
 
-    <div id="comparison" class="hidden">
-      <figure>
-        <div id="divisor"></div>
-      </figure>
-      <input type="range" min="0" max="100" value="50" id="slider">
+      <div id="options">
+        <div id="upload-container">
+          <label for="upload" class="button file-button">
+            <span>Choose File</span>
+          </label>
+          <input type="file" id="upload" hidden>
+          <p id="get-started">Upload an image to get started.</p>   
+        </div>
+        <div id="controls" class="hidden">
+          <div id="block-controls">
+            <label for="blockSizeInput">Block Size: </label>
+            <input type="number" id="blockSizeInput" min="4" max="180">
+          </div>
+          <div id="palette-controls">
+            <label for="paletteSizeSelect">Palette Size: </label>
+            <select id="paletteSizeSelect">
+              <option value="" <%= project.palette_size ? "" : "selected" %>>None</option>
+              <option value="2" <%= project.palette_size == 2 ? "selected" : "" %>>2 Colors</option>
+              <option value="3" <%= project.palette_size == 3 ? "selected" : "" %>>3 Colors</option>
+              <option value="4" <%= project.palette_size == 4 ? "selected" : "" %>>4 Colors</option>
+              <option value="8" <%= project.palette_size == 8 ? "selected" : "" %>>8 Colors</option>
+              <option value="16" <%= project.palette_size == 16 ? "selected" : "" %>>16 Colors</option>
+              <option value="32" <%= project.palette_size == 32 ? "selected" : "" %>>32 Colors</option>
+              <option value="64" <%= project.palette_size == 64 ? "selected" : "" %>>64 Colors</option>
+              <option value="128" <%= project.palette_size == 128 ? "selected" : "" %>>128 Colors</option>
+            </select>
+          </div>
+          <a class="button hidden" id="toggleColorChangeMapButton">Show Color Change Map</a>
+        </div>
+        <div id="output-options">
+          <a class="button hidden" id="downloadButton">Download Image</a> 
+          <a href="#" class="button hidden" id="saveProjectButton" class="button save-project">Save Project to Site</a>
+          <a href="/sketch/<%= project.id || '' %>" class="button hidden" id="open-sketch">Open in Sketch</a>
+        </div>
+      </div>
+
     </div>
 
-    <a class="button hidden" id="downloadButton">Download Image</a> 
-    <a href="#" class="button hidden" id="saveProjectButton" class="button save-project">Save Project to Site</a>
-    <a href="/sketch/<%= project.id || '' %>" class="button hidden" id="open-sketch">Open in Sketch</a>
   </main>
 
   <script type="text/javascript" src="/js/rgbquant.js"></script>
