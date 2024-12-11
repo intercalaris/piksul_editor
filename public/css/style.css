@@ -178,7 +178,7 @@ body {
 
 #editor {
     background: linear-gradient(to bottom right, #0a0c1c, #110233);
-	padding: 4rem;
+	padding: 2rem;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
@@ -219,6 +219,7 @@ body {
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
+	gap: 2rem;
 }
 #options .button {
 	padding: 0.5rem 1.3rem;
@@ -233,6 +234,10 @@ body {
 	display: flex;
 	flex-direction: column;
 	gap: 2rem;
+}
+#open-sketch {
+	border: 2.5px solid #8470e9;
+	margin-bottom: 2rem;
 }
 
 input[type="number"],
@@ -261,10 +266,6 @@ select#paletteSizeSelect option {
     background-color: #0e0e2b; /*  dropdown background */
     color: #fff;
 }
-
-
-
-
 
 
 #comparison {
@@ -327,6 +328,38 @@ input[type="range"]::-moz-range-thumb {
 
 /* MEDIA QUERIES */
 /* INDEX */
+@media (max-width: 1000px) {
+	#controls {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+	
+	#output-options {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+	#open-sketch {
+		margin-bottom: 1rem;
+	}
+}
+@media (max-width: 830px) {
+	#controls {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	
+	#output-options {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	#open-sketch {
+		margin-bottom: 0.5rem;
+	}
+}
 @media (max-width: 768px) {
     .main-layout {
         flex-direction: column;
@@ -343,4 +376,35 @@ input[type="range"]::-moz-range-thumb {
     .demo-container img {
         width: 100%; 
     }
+	#options-and-editor {
+		flex-direction: column;
+	}
+
+	#comparison {
+		width: 85vw;
+		max-width: 85vw;
+	}
+	header .button {
+		padding: 1rem 1.5rem;
+		font-size: 1.5rem;
+	}
+
+	#options {
+		gap:3rem;
+	}
+	#controls {
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+	
+	#output-options {
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+	#open-sketch {
+		margin-bottom: 1.5rem;
+	}
+	header .user-buttons {
+		display: none;
+	}
 }
