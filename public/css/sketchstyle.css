@@ -30,7 +30,7 @@ body {
 
 
 header {
-    background-color: rgb(18, 18, 18);
+    background-color: rgb(29, 29, 29);
     border: 1px solid rgb(52, 52, 52);
     padding: 0.5rem;
 	display: flex;
@@ -46,7 +46,7 @@ header {
 	display: flex;
 	align-items: center;
 	color: rgb(255, 255, 255);
-    background-color: #332883db;
+    background-color: #2d246fdb;
 }
 header img {
 	width: 4rem;

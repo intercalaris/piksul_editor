@@ -157,24 +157,31 @@ main {
 #gallery header {
     margin-bottom: 3rem;
 }
+#gallery main {
+    background: linear-gradient(to bottom right, #0a0c1c, #110233);
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+
+}
 .projects-gallery {
-	background: linear-gradient(to bottom right, #0a0c1c, #110233);
     display: flex;
     flex-wrap: wrap;
-    gap: 2rem;
+    gap: 1rem;
     padding: 0 3rem 0 3rem;
     justify-content: space-around;
     
 }
 .project-card {
     display: flex;
-    width: 39rem;
+    width: 35rem;
     flex-direction: column;
     justify-content: space-between;
     gap: 1rem;
     box-shadow: 0 0 30px rgba(82, 66, 203, 0.3);
     border-radius: 15px;
     padding: 2rem;
+    font-size: 1.7rem;
 }
 .project-card img {
     width: 100%;
@@ -187,12 +194,14 @@ main {
 }
 .project-buttons {
     display: flex;
-	flex-direction: column;
 	gap: 1rem;
-}
-.open-in {
-	display: flex;
+    border-width: 2.5px;
 	justify-content: space-between;
+}
+.project-buttons .button {
+    padding: 0.5rem 0.7rem;
+    display: flex;
+    align-items: center;
 }
 .delete-project {
 	border: 2.5px solid #d65454;
@@ -201,11 +210,6 @@ main {
 .delete-project .trash {
     width: 2rem;
 }
-.open-in .button {
-	padding: 0.5rem 1rem;
-    border-width: 2.5px;
-}
-
 
 /* EDITOR PAGE */
 body {
