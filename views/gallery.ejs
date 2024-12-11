@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/css/style.css">
   <title>Saved Projects</title>
 </head>
-<body>
+<body id="gallery">
   <header>
     <a href="/" class="button logo-home">
       <img id="piksul-logo" src="/img/piksul-logo.png" alt="Piksul Logo">
@@ -22,7 +22,7 @@
       <a class="button logout hidden"><span>Log Out</span></a>
     </div>
   </header>
-  <main id="gallery">
+  <main>
     <h1>Saved Projects</h1>
     <section class="projects-gallery">
       <% if (projects.length === 0) { %>
@@ -36,18 +36,21 @@
 				data-edited-image="<%= project.edited_image %>">
 
             <img src="/gallery/image/<%= project.edited_image %>" alt="Project Thumbnail">
-            <div class="project-info">
-              <p>Block Size: <%= project.block_size %></p>
-              <p>Palette Size: <%= project.palette_size %></p>
-              <!-- <p>Tolerance: <%= project.tolerance %></p> -->
-              <p>Created On: <%= new Date(project.created_at).toLocaleDateString() %></p>
-            </div>
-            <div class="project-buttons">
-              <div class="open-in">
-                <a href="/editor/<%= project.id %>" class="button open-project">Open in Editor</a>
-                <a href="#" class="button open-sketch">Open in Sketch</a>
+            <div class="bottom-project-card">
+              <div class="project-info">
+                <p>Block Size: <%= project.block_size %></p>
+                <p><%= project.palette_size ? `Palette Size: ${project.palette_size}` : '' %></p>
+                <!-- <p>Tolerance: <%= project.tolerance %></p> -->
+                <p>Created On: <%= new Date(project.created_at).toLocaleDateString() %></p>
               </div>
-              <a class="button delete-project">Delete</a>
+              <div class="project-buttons">
+                <div class="open-in">
+                  <a href="/editor/<%= project.id %>" class="button open-project">Open in Editor</a>
+                  <a class="button delete-project"><img class="trash" src="/img/trash.png" alt="trashcan">
+                  <a href="#" class="button open-sketch">Open in Sketch</a>
+                </div>
+                </a>
+              </div>
             </div>
           </div>
         <% }); %>

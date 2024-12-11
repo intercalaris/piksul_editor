@@ -8,16 +8,21 @@
 	<title>Manual Pixel Editor</title>
 </head>
 <body>
-    <header class="banner">
+	<header>
+		<a href="/" class="button logo-home">
+			<img id="piksul-logo" src="/img/piksul-logo.png" alt="Piksul Logo">
+			<span>PIKSUL</span>
+		</a>
 		<div class="navigation">
-			<a href="/gallery" class="button back-to-gallery"><span>Back to Gallery</span></a>
+			<a href="/editor" class="button start-project"><span>Start New Project</span></a>
+			<a href="/gallery" class="button back-to-gallery"><span>Gallery</span></a>
 		</div>
-		<div class="users">
+		<div class="user-buttons">
 			<a class="button login"><span>Log In</span></a>
 			<a class="button create-account"><span>Sign Up</span></a>
 			<a class="button logout hidden"><span>Log Out</span></a>
 		</div>
-    </header>
+  </header>
 
   	<main id="sketch"
 		data-project-id="<%= project.id || '' %>"

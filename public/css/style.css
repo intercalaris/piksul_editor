@@ -60,7 +60,7 @@ img {
 header {
     background-color: rgb(23, 2, 63);
     border: 2px solid rgb(22, 22, 59);
-    padding: 1rem 5rem;
+    padding: 0.5rem 5rem;
 	display: flex;
     justify-content: space-between;
     gap: 2rem;
@@ -73,7 +73,8 @@ header {
 	padding: 0;
 	display: flex;
 	align-items: center;
-	color: rgb(255, 255, 255)
+	color: rgb(255, 255, 255);
+    background-color: #332883db;
 }
 header img {
 	width: 4rem;
@@ -153,22 +154,36 @@ main {
 
 
 /* GALLERY */
+#gallery header {
+    margin-bottom: 3rem;
+}
 .projects-gallery {
 	background: linear-gradient(to bottom right, #0a0c1c, #110233);
     display: flex;
     flex-wrap: wrap;
     gap: 2rem;
+    padding: 0 3rem 0 3rem;
     justify-content: space-around;
+    
 }
 .project-card {
     display: flex;
-    width: 35rem;
+    width: 39rem;
     flex-direction: column;
     justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 0 30px rgba(82, 66, 203, 0.3);
+    border-radius: 15px;
+    padding: 2rem;
 }
 .project-card img {
     width: 100%;
 	border-radius: 15px;
+}
+.bottom-project-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 .project-buttons {
     display: flex;
@@ -180,12 +195,15 @@ main {
 	justify-content: space-between;
 }
 .delete-project {
-	border: 2px solid #d65454;
+	border: 2.5px solid #d65454;
 	align-self: center;
-	padding: 0.5rem 1rem;
+}
+.delete-project .trash {
+    width: 2rem;
 }
 .open-in .button {
 	padding: 0.5rem 1rem;
+    border-width: 2.5px;
 }
 
 
