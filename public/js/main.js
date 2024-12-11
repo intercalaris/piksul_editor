@@ -4,16 +4,18 @@ const downloadButton = document.getElementById("downloadButton");
 const blockSizeInput = document.getElementById("blockSizeInput");
 // const toleranceInput = document.getElementById('toleranceInput');
 const controls = document.getElementById("controls");
+const outputOptions = document.getElementById("output-options");
 const divisor = document.getElementById("divisor");
 const slider = document.getElementById("slider");
 const comparison = document.getElementById("comparison");
 const startProjectButton = document.getElementById("startProjectButton");
 const saveProjectButton = document.getElementById("saveProjectButton");
-const openProjectButtons = document.querySelectorAll(".open-project");
+// const openProjectButtons = document.querySelectorAll(".open-project");
 const deleteProjectButtons = document.querySelectorAll(".delete-project");
 const viewSavedProjectsButton = document.getElementById("viewSavedProjectsButton");
 const paletteSizeSelect = document.getElementById("paletteSizeSelect");
 const openSketchButton = document.getElementById("open-sketch")
+
 let originalImage = null;
 let originalImageURL = null;
 let editedImageURL = null;
@@ -110,7 +112,11 @@ toggleColorChangeMapButton?.addEventListener("click", async () => {
 });
 
 window.addEventListener('resize', () => {
-    setupSnappedImage(editedImageURL);
+    const editorMain = document.getElementById("editor");
+    if (editorMain) {
+        setupSnappedImage(editedImageURL);
+        console.log('resize');
+    }
 });
 
 function setupOriginalImage(url, imgElement) {
@@ -212,6 +218,7 @@ uploadInput?.addEventListener("change", async (event) => {
     const img = new Image();
     img.onload = async () => {
         controls.classList.remove("hidden");
+        outputOptions.classList.remove("hidden");
         comparison.classList.remove("hidden");
 
         // Estimate and update block size
@@ -232,13 +239,21 @@ uploadInput?.addEventListener("change", async (event) => {
 });
 
 
-openSketchButton?.addEventListener("click", (e) => {
+function openSketchClick(button) {
     // Check if href /sketch/project.id was replaced by #
+    if (button.getAttribute("href") === "#") {
+        // Redirect to the new sketch page
+        window.location.href = "/sketch/new";
+    }
+}
+
+// Open sketch from sketch ID button in editor
+openSketchButton?.addEventListener("click", () => {
     if (openSketchButton.getAttribute("href") === "#") {
-        // Redirect sketch page
         window.location.href = "/sketch/new";
     }
 });
+
 
 saveProjectButton?.addEventListener("click", async () => {
     const formData = new FormData();
@@ -295,9 +310,9 @@ downloadButton?.addEventListener("click", () => {
 deleteProjectButtons?.forEach((button) =>
     button.addEventListener("click", deleteProject)
 );
-openProjectButtons?.forEach((button) =>
-    button.addEventListener("click", openProject)
-);
+// openProjectButtons?.forEach((button) =>
+//     button.addEventListener("click", openProject)
+// );
 
 slider?.addEventListener("input", () => {
     divisor.style.width = slider.value + "%";
@@ -330,6 +345,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 // Load the image into the editor
                 await setupOriginalImage(imagePath, document.querySelector("#comparison figure"));
                 controls.classList.remove("hidden");
+                outputOptions.classList.remove("hidden");
                 comparison.classList.remove("hidden");
                 // snapButton.classList.remove("hidden");
 
@@ -347,7 +363,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
     if(gallery) {
-        const openSketchButtons = document.querySelectorAll('.project-buttons #open-sketch');          
+        openSketchButtons = document.querySelectorAll('.project-buttons .open-sketch');          
         openSketchButtons.forEach(button => {
             button.addEventListener('click', (e) => {        
             const projectCard = button.closest('.project-card');

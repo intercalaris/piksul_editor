@@ -14,7 +14,7 @@
       <span>PIKSUL</span>
     </a>
     <div class="navigation">
-      <a href="/gallery" class="button view-projects"><span>Public Projects</span></a>
+      <a href="/editor" class="button start-project"><span>Start New Project</span></a>
     </div>
     <div class="user-buttons">
       <a class="button login"><span>Log In</span></a>
@@ -23,8 +23,6 @@
     </div>
   </header>
   <main id="gallery">
-    <a href="/editor" class="button start-project"><span>Start New Project</span></a>
-
     <h1>Saved Projects</h1>
     <section class="projects-gallery">
       <% if (projects.length === 0) { %>
@@ -42,11 +40,13 @@
               <p>Block Size: <%= project.block_size %></p>
               <p>Palette Size: <%= project.palette_size %></p>
               <!-- <p>Tolerance: <%= project.tolerance %></p> -->
-              <p>Created At: <%= new Date(project.created_at).toLocaleString() %></p>
+              <p>Created On: <%= new Date(project.created_at).toLocaleDateString() %></p>
             </div>
             <div class="project-buttons">
-              <a href="/editor/<%= project.id %>" class="button" id="open-project">Open in Editor</a>
-              <a href="#" class="button" id="open-sketch">Open in Sketch</a>
+              <div class="open-in">
+                <a href="/editor/<%= project.id %>" class="button open-project">Open in Editor</a>
+                <a href="#" class="button open-sketch">Open in Sketch</a>
+              </div>
               <a class="button delete-project">Delete</a>
             </div>
           </div>

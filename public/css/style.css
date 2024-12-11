@@ -30,6 +30,8 @@ img {
     margin: 0 auto;
 }
 
+
+
 /* BUTTONS */
 .button {
     display: inline-block;
@@ -82,6 +84,11 @@ header .user-buttons {
     justify-content: flex-end;
     gap: 2rem;
 }
+
+#open-sketch, .open-sketch {
+	border: 2.5px solid #8470e9;
+}
+
 
 main {
     flex: 1; /* stretching */
@@ -147,27 +154,40 @@ main {
 
 /* GALLERY */
 .projects-gallery {
+	background: linear-gradient(to bottom right, #0a0c1c, #110233);
     display: flex;
     flex-wrap: wrap;
-    gap: 5rem;
+    gap: 2rem;
     justify-content: space-around;
 }
 .project-card {
     display: flex;
-    width: 42rem;
+    width: 35rem;
     flex-direction: column;
     justify-content: space-between;
 }
 .project-card img {
     width: 100%;
+	border-radius: 15px;
 }
 .project-buttons {
     display: flex;
-    justify-content: space-between;
+	flex-direction: column;
+	gap: 1rem;
 }
-.hidden {
-    display: none;
+.open-in {
+	display: flex;
+	justify-content: space-between;
 }
+.delete-project {
+	border: 2px solid #d65454;
+	align-self: center;
+	padding: 0.5rem 1rem;
+}
+.open-in .button {
+	padding: 0.5rem 1rem;
+}
+
 
 /* EDITOR PAGE */
 body {
@@ -235,8 +255,7 @@ body {
 	flex-direction: column;
 	gap: 2rem;
 }
-#open-sketch {
-	border: 2.5px solid #8470e9;
+#editor #open-sketch {
 	margin-bottom: 2rem;
 }
 
@@ -330,33 +349,29 @@ input[type="range"]::-moz-range-thumb {
 /* INDEX */
 @media (max-width: 1000px) {
 	#controls {
-		display: flex;
 		flex-direction: column;
 		gap: 1rem;
 	}
 	
 	#output-options {
-		display: flex;
 		flex-direction: column;
 		gap: 1rem;
 	}
-	#open-sketch {
+	#editor #open-sketch {
 		margin-bottom: 1rem;
 	}
 }
 @media (max-width: 830px) {
 	#controls {
-		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 	}
 	
 	#output-options {
-		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 	}
-	#open-sketch {
+	#editor #open-sketch {
 		margin-bottom: 0.5rem;
 	}
 }
@@ -401,10 +416,15 @@ input[type="range"]::-moz-range-thumb {
 		flex-direction: column;
 		gap: 1.5rem;
 	}
-	#open-sketch {
+	#editor #open-sketch {
 		margin-bottom: 1.5rem;
 	}
 	header .user-buttons {
 		display: none;
 	}
+}
+
+
+.hidden {
+    display: none !important;
 }
