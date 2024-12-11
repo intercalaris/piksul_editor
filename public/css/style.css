@@ -164,7 +164,7 @@ main {
     gap: 3rem;
 
 }
-.projects-gallery {
+.projects-gallery { 
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
