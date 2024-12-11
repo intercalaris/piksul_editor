@@ -181,7 +181,7 @@ body {
 	padding: 5rem;
     align-items: center;
     justify-content: space-between;
-    gap: 4rem;
+    gap: 1rem;
     width: 100%;
 }
 #editor .action-buttons {

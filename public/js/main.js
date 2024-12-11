@@ -166,7 +166,9 @@ async function deleteProject(click) {
 uploadInput?.addEventListener("change", async (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
+    openSketchButton.classList.remove("hidden");
+    const getStartedText = document.getElementById("get-started");
+    getStartedText.style.display = "none";
     // Reset data attributes
     const editorMain = document.getElementById("editor");
     editorMain.setAttribute("data-project-id", "");
@@ -201,7 +203,7 @@ uploadInput?.addEventListener("change", async (event) => {
 
     // Store Data URL in localStorage
     localStorage.setItem("editedImage", dataURL);
-    console.log(`LocalStorage updated with edited image after upload: ${dataURL}`);
+    console.log('LocalStorage updated with edited image after upload');
 
     const img = new Image();
     img.onload = async () => {
@@ -223,9 +225,6 @@ uploadInput?.addEventListener("change", async (event) => {
     };
 
     img.src = objectURL;
-    // No longer set 'editedImage' to object URL
-    // localStorage.setItem("editedImage", originalImageURL);
-    // console.log(`LocalStorage updated with edited image after upload`);
 });
 
 
@@ -315,6 +314,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const imagePath = `/gallery/image/${originalImageFilename}`;
             const getStartedText = document.getElementById("get-started");
             getStartedText.style.display = "none";
+            openSketchButton.classList.remove("hidden");
             try {
                 // Fetch the original image as a blob
                 const response = await fetch(imagePath);
@@ -614,8 +614,6 @@ async function snapToGrid(blockSize) {
     localStorage.setItem("editedImage", editedImageURL);
     console.log('LocalStorage updated with edited image after snapping');
 }
-
-
 
 function applyQuantizationToImage(paletteSize) {
     if (!snappedImageURL) {
