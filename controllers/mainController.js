@@ -44,7 +44,7 @@ module.exports = {
     openInSketch: async (req, res) => {
         const id = req.params.id;
         if (id === "new") {
-            // if unsaved "new" project
+            // if unsaved new project
             console.log(
                 "Loading new project."
             );
@@ -120,7 +120,6 @@ module.exports = {
         const filePath = path.join(__dirname, "../data/img", filename);
 
         try {
-            // Serve the requested image
             res.sendFile(filePath, (err) => {
                 if (err) {
                     console.error("Error sending image file:", filePath, err);
@@ -137,12 +136,12 @@ module.exports = {
         const { block_size, palette_size, tolerance, project_id } = req.body;
         const originalImage = req.files.original_image[0];
         const editedImage = req.files.edited_image[0];
-        const userId = req.user ? req.user.id : null; // Set userId to null if guest
+        const userId = req.user ? req.user.id : null; // set userid to null if guest
       
         try {
           let id = project_id;
       
-          // insert new project if no ID provided
+          // insert new project if no id provided
           if (!project_id) {
             id = await ProjectModel.insertProject(block_size, palette_size, tolerance, userId);
           }
@@ -167,9 +166,7 @@ module.exports = {
     deleteProject: async (req, res) => {
         const projectID = req.params.id;
         try {
-            // Delete project from database
             await ProjectModel.deleteProject(projectID);
-            // Delete associated image files
             await ProjectModel.deleteProjectImages(projectID);
             console.log(`Project ${projectID} deleted.`);
             res.send(`Project ${projectID} deleted.`);

@@ -2,7 +2,6 @@ const path = require("path");
 const fs = require("fs").promises;
 const db = require("../config/databaseConfig");
 
-// Save image files for project
 const saveImages = async (id, originalImage, editedImage) => {
   const originalImagePath = path.join("data/img", `${id}_original.png`);
   const editedImagePath = path.join("data/img", `${id}_edited.png`);
@@ -11,7 +10,6 @@ const saveImages = async (id, originalImage, editedImage) => {
   return { originalImagePath, editedImagePath };
 };
 
-// Insert new project
 const insertProject = async (blockSize, paletteSize, tolerance, userId = null) => {
   return new Promise((resolve, reject) => {
     db.run(
@@ -19,13 +17,12 @@ const insertProject = async (blockSize, paletteSize, tolerance, userId = null) =
       [userId, "placeholder", "placeholder", parseInt(blockSize, 10), parseInt(paletteSize, 10), parseInt(tolerance, 10)],
       function (err) {
         if (err) return reject(err);
-        resolve(this.lastID); // Return new project ID
+        resolve(this.lastID); // return new project ID
       }
     );
   });
 };
 
-// Update existing project
 const updateProject = async (id, originalImagePath, editedImagePath, blockSize, paletteSize, tolerance) => {
   return new Promise((resolve, reject) => {
     db.run(
@@ -41,7 +38,6 @@ const updateProject = async (id, originalImagePath, editedImagePath, blockSize, 
   });
 };
 
-// Delete project from database
 const deleteProject = async (projectID) => {
   return new Promise((resolve, reject) => {
     db.run("DELETE FROM projects WHERE id = ?", [projectID], (err) => {
@@ -51,7 +47,6 @@ const deleteProject = async (projectID) => {
   });
 };
 
-// Delete associated image files
 const deleteProjectImages = async (projectID) => {
   const originalImagePath = path.join("data/img", `${projectID}_original.png`);
   const editedImagePath = path.join("data/img", `${projectID}_edited.png`);
@@ -59,7 +54,6 @@ const deleteProjectImages = async (projectID) => {
     await fs.unlink(originalImagePath);
     await fs.unlink(editedImagePath);
   } catch (err) {
-    // Ignore file not found errors but log others
     if (err.code !== "ENOENT") {
       console.error(`Error deleting file: ${err.message}`);
     }

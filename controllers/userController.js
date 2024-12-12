@@ -94,7 +94,6 @@ exports.postSignup = (req, res, next) => {
       return res.redirect("../signup");
     }
 
-    // Create a new user
     UserModel.createUser(req.body.userName, req.body.email, req.body.password, (err, user) => {
       if (err) return next(err);
       req.logIn(user, (err) => {

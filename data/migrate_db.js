@@ -1,10 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-
-// Path to the database
 const dbPath = path.join(__dirname, 'database.sqlite');
 
-// Desired schema for the projects table
 const desiredSchema = {
   id: 'INTEGER PRIMARY KEY AUTOINCREMENT',
   user_id: 'INTEGER',
@@ -26,7 +23,6 @@ function migrateProjectsTable() {
     }
   });
 
-  // Get the existing table's schema
   db.all(`PRAGMA table_info(projects)`, (err, rows) => {
     if (err) {
       console.error('Error fetching schema:', err);
@@ -34,10 +30,8 @@ function migrateProjectsTable() {
       return;
     }
 
-    // Extract existing column names
     const existingColumns = rows.map((row) => row.name);
 
-    // Identify missing columns
     const missingColumns = Object.keys(desiredSchema).filter(
       (column) => !existingColumns.includes(column)
     );
@@ -50,7 +44,6 @@ function migrateProjectsTable() {
 
     console.log(`Adding missing columns: ${missingColumns.join(', ')}`);
 
-    // Add missing columns
     missingColumns.forEach((column) => {
       const columnType = desiredSchema[column];
       db.run(
@@ -65,7 +58,7 @@ function migrateProjectsTable() {
       );
     });
 
-    // Close the database after the migration
+
     db.close(() => {
       console.log('Migration completed and database closed.');
     });
@@ -73,4 +66,3 @@ function migrateProjectsTable() {
 }
 
 migrateProjectsTable();
-// run with node migrate_db.js when changing schema

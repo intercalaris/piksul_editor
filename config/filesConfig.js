@@ -1,8 +1,8 @@
 const multer = require("multer");
 
 const upload = multer({
-  dest: "data/img/", // Static folder for uploads
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
+  dest: "data/img/",
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 mb limit
 });
 
 module.exports = upload;

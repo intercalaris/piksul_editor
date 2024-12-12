@@ -1,8 +1,6 @@
 const uploadInput = document.getElementById("upload");
-// const snapButton = document.getElementById("snapButton");
 const downloadButton = document.getElementById("downloadButton");
 const blockSizeInput = document.getElementById("blockSizeInput");
-// const toleranceInput = document.getElementById('toleranceInput');
 const controls = document.getElementById("controls");
 const outputOptions = document.getElementById("output-options");
 const divisor = document.getElementById("divisor");
@@ -10,7 +8,6 @@ const slider = document.getElementById("slider");
 const comparison = document.getElementById("comparison");
 const startProjectButton = document.getElementById("startProjectButton");
 const saveProjectButton = document.getElementById("save-project");
-// const openProjectButtons = document.querySelectorAll(".open-project");
 const deleteProjectButtons = document.querySelectorAll(".delete-project");
 const viewSavedProjectsButton = document.getElementById("viewSavedProjectsButton");
 const paletteSizeSelect = document.getElementById("paletteSizeSelect");
@@ -82,7 +79,7 @@ function drawColorChangeMap(img, changes) {
 
     ctx.fillStyle = "red";
     changes.forEach(({ x, y }) => {
-        ctx.fillRect(x, y, 1, 1); // Mark each pixel red
+        ctx.fillRect(x, y, 1, 1); // mark color change red
     });
 
     const overlay = document.querySelector("#comparison figure");
@@ -92,9 +89,8 @@ function drawColorChangeMap(img, changes) {
 toggleColorChangeMapButton?.addEventListener("click", async () => {
     const overlay = document.querySelector("#comparison figure");
     if (!isColorChangeMapVisible) {
-        // Show color change map
         const img = new Image();
-        img.src = originalImageURL; // Use saved original URL
+        img.src = originalImageURL;
         img.onload = () => {
             if (!colorChangePositions.length) {
                 colorChangePositions = calculateColorChanges(img);
@@ -104,7 +100,6 @@ toggleColorChangeMapButton?.addEventListener("click", async () => {
             isColorChangeMapVisible = true;
         };
     } else {
-        // Hide color change map and restore original image
         overlay.style.backgroundImage = `url(${originalImageURL})`;
         toggleColorChangeMapButton.textContent = "Show Color Change Map";
         isColorChangeMapVisible = false;
@@ -126,14 +121,14 @@ function setupOriginalImage(url, imgElement) {
             const aspectRatio = img.width / img.height;
             comparison.style.aspectRatio = `${aspectRatio}`;
             imgElement.style.backgroundImage = `url(${url})`;
-            originalImageURL = url; // Save the original image URL
+            originalImageURL = url;
             resolve();
         };
         img.onerror = () => {
             console.error("Error loading image:", url);
             reject(new Error("Failed to load image"));
         };
-        img.src = url; // Start image load
+        img.src = url; // start image load
     });
 }
 
@@ -143,7 +138,6 @@ function setupSnappedImage(editedImageURL) {
     divisor.style.backgroundSize = `${comparisonRect.width}px ${comparisonRect.height}px`;
     divisor.style.backgroundRepeat = "no-repeat";
     divisor.style.backgroundPosition = "top left";
-    // Show buttons only after snapping
     downloadButton.classList.remove("hidden");
     saveProjectButton.classList.remove("hidden");
     toggleColorChangeMapButton.classList.remove("hidden")
@@ -179,14 +173,14 @@ uploadInput?.addEventListener("change", async (event) => {
     openSketchButton.classList.remove("hidden");
     const getStartedText = document.getElementById("get-started");
     getStartedText.style.display = "none";
-    // Reset data attributes
+    // reset data attributes
     const editorMain = document.getElementById("editor");
     editorMain.setAttribute("data-project-id", "");
     editorMain.setAttribute("data-original-image", "");
     editorMain.setAttribute("data-block-size", "");
     editorMain.setAttribute("data-palette-size", "");
 
-    // Reset UI state
+    // reset UI
     originalFileName = file.name.split(".")[0];
     projectId = null;
     editedImageURL = null;
@@ -198,12 +192,12 @@ uploadInput?.addEventListener("change", async (event) => {
     downloadButton.classList.add("hidden");
     saveProjectButton.classList.add("hidden");
 
-    // Load new image as Object URL
+    // load new image as object url
     const objectURL = URL.createObjectURL(file);
     originalBlob = await fetch(objectURL).then((res) => res.blob());
     await setupOriginalImage(objectURL, document.querySelector("#comparison figure"));
 
-    // Convert Object URL to Data URL
+    // convert to data url
     const dataURL = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result);
@@ -211,7 +205,7 @@ uploadInput?.addEventListener("change", async (event) => {
         reader.readAsDataURL(file);
     });
 
-    // Store Data URL in localStorage
+    // store data url in local storage
     localStorage.setItem("editedImage", dataURL);
     console.log('LocalStorage updated with edited image after upload');
 
@@ -221,7 +215,7 @@ uploadInput?.addEventListener("change", async (event) => {
         outputOptions.classList.remove("hidden");
         comparison.classList.remove("hidden");
 
-        // Estimate and update block size
+        // estimate and update block size
         const blockSize = populateBlockValue(img);
         blockSizeInput.value = blockSize;
         localStorage.setItem("blockSize", blockSize);
@@ -232,20 +226,10 @@ uploadInput?.addEventListener("change", async (event) => {
         downloadButton.classList.remove("hidden");
         saveProjectButton.classList.remove("hidden");
         openSketchButton.classList.remove("hidden");
-        // openSketchButton.href = "#"; // to stop the button from calling id-specific endpoint
     };
 
     img.src = objectURL;
 });
-
-
-// function openSketchClick(button) {
-//     // Check if href /sketch/project.id was replaced by #
-//     if (button.getAttribute("href") === "#") {
-//         // Redirect to the new sketch page
-//         window.location.href = "/sketch/new";
-//     }
-// }
 
 // Open sketch from sketch ID button in editor
 openSketchButton?.addEventListener("click", () => {
@@ -253,7 +237,6 @@ openSketchButton?.addEventListener("click", () => {
         window.location.href = "/sketch/new";
     }
 });
-
 
 saveProjectButton?.addEventListener("click", async () => {
     const formData = new FormData();
@@ -310,9 +293,6 @@ downloadButton?.addEventListener("click", () => {
 deleteProjectButtons?.forEach((button) =>
     button.addEventListener("click", deleteProject)
 );
-// openProjectButtons?.forEach((button) =>
-//     button.addEventListener("click", openProject)
-// );
 
 slider?.addEventListener("input", () => {
     divisor.style.width = slider.value + "%";
@@ -335,21 +315,20 @@ document.addEventListener("DOMContentLoaded", async () => {
             getStartedText.style.display = "none";
             openSketchButton.classList.remove("hidden");
             try {
-                // Fetch the original image as a blob
+                // fetch original image as blob
                 const response = await fetch(imagePath);
                 if (!response.ok) {
                     throw new Error("Failed to fetch original image");
                 }
-                originalBlob = await response.blob(); // Update originalBlob
+                originalBlob = await response.blob();
 
-                // Load the image into the editor
+                // load image into the editor
                 await setupOriginalImage(imagePath, document.querySelector("#comparison figure"));
                 controls.classList.remove("hidden");
                 outputOptions.classList.remove("hidden");
                 comparison.classList.remove("hidden");
-                // snapButton.classList.remove("hidden");
 
-                // Populate block size
+                // populate block size
                 blockSizeInput.value = blockSize;
                 paletteSizeSelect.value = paletteSize;
                 localStorage.setItem("editedImage", imagePath);
@@ -389,7 +368,7 @@ function paletteSizeChange() {
     localStorage.setItem("paletteSize", paletteSize);
     console.log(`LocalStorage updated with palette size: ${paletteSize}`);
     if (isNaN(paletteSize)) {
-        // "None" selected, reset to regular snapped image
+        // if none selected, reset to regular snapped image
         if (snappedImageURL) {
             editedImageURL = snappedImageURL;
             setupSnappedImage(editedImageURL);
@@ -399,7 +378,6 @@ function paletteSizeChange() {
             console.warn("No snapped image to reset to.");
         }
     } else {
-        // Quantize palette size
         applyQuantizationToImage(paletteSize);
     }
 }
@@ -445,8 +423,8 @@ function estimateBlockSize(img) {
         }
     }
 
-    analyzeLine(height, width, (y, x) => (y * width + x) * 4); // Horizontal
-    analyzeLine(width, height, (x, y) => (y * width + x) * 4); // Vertical
+    analyzeLine(height, width, (y, x) => (y * width + x) * 4); // horizontal
+    analyzeLine(width, height, (x, y) => (y * width + x) * 4); // vertical
     colorChanges.sort((a, b) => a - b);
     const lengthThreshold =
         colorChanges[Math.floor(0.75 * colorChanges.length)];
@@ -489,7 +467,7 @@ function evaluateSnapping(img, blockSize) {
 
     let totalDeviation = 0;
 
-    // Loop through each block cell
+    // loop through each block cell
     for (let y = 0; y < height; y += blockSize) {
         for (let x = 0; x < width; x += blockSize) {
             const centerX = Math.min(x + Math.floor(blockSize / 2), width - 1);
@@ -507,7 +485,7 @@ function evaluateSnapping(img, blockSize) {
                 colorSumB = 0;
             let colorValues = [];
 
-            // Calculate deviation for each pixel in the block cell from the sampled color
+            // calculate deviation for each pixel in block cell from sampled color
             for (let offsetY = 0; offsetY < blockSize; offsetY++) {
                 for (let offsetX = 0; offsetX < blockSize; offsetX++) {
                     const pixelX = x + offsetX;
@@ -521,7 +499,6 @@ function evaluateSnapping(img, blockSize) {
                             Math.abs(dr) + Math.abs(dg) + Math.abs(db);
                         cellPixelCount++;
 
-                        // Calculate color statistics for weight calculation
                         colorSumR += data[newIndex];
                         colorSumG += data[newIndex + 1];
                         colorSumB += data[newIndex + 2];
@@ -534,12 +511,12 @@ function evaluateSnapping(img, blockSize) {
                 }
             }
 
-            // Calculate mean color for the cell
+            // calculate mean color for cell
             const meanR = colorSumR / cellPixelCount;
             const meanG = colorSumG / cellPixelCount;
             const meanB = colorSumB / cellPixelCount;
 
-            // Calculate standard deviation (or variance) of colors in the cell
+            // calculate variance of colors in cell
             let colorVariance = 0;
             for (let i = 0; i < colorValues.length; i++) {
                 const [rVal, gVal, bVal] = colorValues[i];
@@ -549,11 +526,9 @@ function evaluateSnapping(img, blockSize) {
                     Math.pow(bVal - meanB, 2);
             }
             colorVariance /= cellPixelCount;
-
-            // Apply a stronger non-linear transformation to create significant differences
             const contrastWeight = 1 + Math.pow(colorVariance, 2);
 
-            // Apply weight to cell deviation
+            // apply weight to cell deviation
             if (cellPixelCount > 0) {
                 cellDeviation /= cellPixelCount;
             }
@@ -579,9 +554,8 @@ async function snapToGrid(blockSize) {
     const ctx = canvas.getContext("2d");
     const img = new Image();
 
-    // Wrap image loading in a Promise
     await new Promise((resolve, reject) => {
-        img.src = originalImageURL; // Always start from the original image
+        img.src = originalImageURL; // start from original image
         img.onload = resolve;
         img.onerror = () => {
             console.error("Failed to load the original image for snapping.");
@@ -624,13 +598,12 @@ async function snapToGrid(blockSize) {
     }
 
     ctx.putImageData(imageData, 0, 0);
-    snappedImageURL = canvas.toDataURL("image/png"); // Save snapped image URL
-    editedImageURL = snappedImageURL; // Start with snapped image for display
-    // Update editedBlob after snapping
+    snappedImageURL = canvas.toDataURL("image/png"); 
+    editedImageURL = snappedImageURL; 
     editedBlob = await fetch(editedImageURL).then((res) => res.blob());
     setupSnappedImage(editedImageURL);
 
-    // Store snapped image as Data URL
+    // store snapped image as data url
     localStorage.setItem("editedImage", editedImageURL);
     console.log('LocalStorage updated with edited image after snapping');
 }
@@ -643,7 +616,7 @@ function applyQuantizationToImage(paletteSize) {
         return;
     }
     const img = new Image();
-    img.src = snappedImageURL; // Use unaltered snapped image
+    img.src = snappedImageURL; // use unchangd snapped image
     img.onload = async () => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
@@ -655,8 +628,8 @@ function applyQuantizationToImage(paletteSize) {
         try {
             const rgbQuant = new RgbQuant({ colors: paletteSize });
             rgbQuant.sample(imageData.data);
-            const reducedData = rgbQuant.reduce(imageData.data, 2); // Request palette-indexed array
-            const palette = rgbQuant.palette(true); // Get palette as RGB triplets
+            const reducedData = rgbQuant.reduce(imageData.data, 2);
+            const palette = rgbQuant.palette(true); // get palette
             if (!palette || palette.length === 0) {
                 console.error("RgbQuant failed to generate a palette.");
                 return;
@@ -665,19 +638,19 @@ function applyQuantizationToImage(paletteSize) {
             for (let i = 0; i < reducedData.length; i++) {
                 const paletteIndex = reducedData[i];
                 const offset = i * 4;
-                const alpha = imageData.data[offset + 3]; // Preserve alpha
+                const alpha = imageData.data[offset + 3];
 
                 if (alpha === 0) {
                     reducedImageData.data[offset] = 0;
                     reducedImageData.data[offset + 1] = 0;
                     reducedImageData.data[offset + 2] = 0;
-                    reducedImageData.data[offset + 3] = 0; // Fully transparent
+                    reducedImageData.data[offset + 3] = 0; // transparent
                 } else if (paletteIndex >= 0 && paletteIndex < palette.length) {
                     const color = palette[paletteIndex];
-                    reducedImageData.data[offset] = color[0]; // Red
-                    reducedImageData.data[offset + 1] = color[1]; // Green
-                    reducedImageData.data[offset + 2] = color[2]; // Blue
-                    reducedImageData.data[offset + 3] = 255; // Fully opaque
+                    reducedImageData.data[offset] = color[0]; // r
+                    reducedImageData.data[offset + 1] = color[1]; // g
+                    reducedImageData.data[offset + 2] = color[2]; // Blbue
+                    reducedImageData.data[offset + 3] = 255; // opaque
                 } else {
                     reducedImageData.data[offset] =
                         reducedImageData.data[offset + 1] =
@@ -688,9 +661,9 @@ function applyQuantizationToImage(paletteSize) {
             }
 
             ctx.putImageData(reducedImageData, 0, 0);
-            editedImageURL = canvas.toDataURL("image/png"); // Update quantized image URL
+            editedImageURL = canvas.toDataURL("image/png"); // update quantized image url
 
-            // Update editedBlob after quantization
+            // update editedb blob after quantization
             editedBlob = await fetch(editedImageURL).then((res) => res.blob());
             setupSnappedImage(editedImageURL);
             localStorage.setItem("editedImage", editedImageURL);

@@ -1,20 +1,18 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-// Initialize SQLite database connection
 const db = new sqlite3.Database(path.join(__dirname, '../data/database.sqlite'), (err) => {
   if (err) {
     console.error('Error opening database:', err);
-    process.exit(1); // Exit if there's a connection issue
+    process.exit(1);
   } else {
     console.log('Connected to SQLite database.');
   }
 });
 
-// Function to create tables (if they don’t exist)
 function initDB() {
 
-  // Create the users table
+  // Create users table
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,7 +22,7 @@ function initDB() {
     )
   `);
 
-  // Create the projects table
+  // Create projects table
   db.run(`
     CREATE TABLE IF NOT EXISTS projects (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,7 +39,6 @@ function initDB() {
   `);
 };
 
-// Run the table creation logic when the app starts
 initDB();
 
 module.exports = db;
