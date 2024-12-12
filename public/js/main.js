@@ -363,7 +363,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
     if(gallery) {
-        openSketchButtons = document.querySelectorAll('.project-buttons .open-sketch');          
+        const openSketchButtons = document.querySelectorAll('.project-buttons .open-sketch');          
         openSketchButtons.forEach(button => {
             button.addEventListener('click', (e) => {        
             const projectCard = button.closest('.project-card');
