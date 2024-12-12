@@ -61,7 +61,6 @@ const loadEditedImage = async () => {
 };
 
 
-// Draw snapping grid
 const drawGrid = () => {
     // clear previous grid
     gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height); 
@@ -86,7 +85,6 @@ const drawGrid = () => {
     gridCtx.restore();
 };
 
-// Snap coordinates to grid
 const snapToGrid = (x, y) => {
     return {
         x: Math.floor(x / blockSize) * blockSize,
@@ -94,15 +92,14 @@ const snapToGrid = (x, y) => {
     };
 };
 
-// Save canvas state for undo
+// save canvas for undo
 const saveStateForUndo = () => {
     undoStack.push(imageCanvas.toDataURL());
     if (undoStack.length > 20) {
-        undoStack.shift(); // Limit undo stack size
+        undoStack.shift(); // 20 undos
     }
 };
 
-// Undo the last action
 undoButton.addEventListener("click", () => {
     if (undoStack.length === 0) {
         alert("No actions to undo.");
@@ -117,7 +114,7 @@ undoButton.addEventListener("click", () => {
     };
 });
 
-// Reset the canvas to the original image
+// reset to original image
 resetButton.addEventListener("click", () => {
     if (!originalImage) {
         console.error("Original image not loaded, cannot reset.");
@@ -129,7 +126,7 @@ resetButton.addEventListener("click", () => {
     undoStack = []; // Clear undo stack
 });
 
-// Extract top 16 colors from the image
+// get top 16 colors from image
 const extractTopColors = () => {
   const tempCanvas = document.createElement("canvas");
   const tempCtx = tempCanvas.getContext("2d");
@@ -144,45 +141,44 @@ const extractTopColors = () => {
       const r = imageData[i];
       const g = imageData[i + 1];
       const b = imageData[i + 2];
-      const a = imageData[i + 3]; // Alpha channel
-      if (a === 0) continue; // Ignore transparent pixels
+      const a = imageData[i + 3];
+      if (a === 0) continue; // ignore transparent pixels
       const color = `rgb(${r},${g},${b})`;
       colorCounts[color] = (colorCounts[color] || 0) + 1;
   }
 
-  // Sort colors by frequency and select top 16
   const topColors = Object.entries(colorCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 16)
       .map(([color]) => color);
 
-  // Render the color palette
-  colorPalette.innerHTML = ""; // Clear existing palette
+  // render color palette
+  colorPalette.innerHTML = "";
   topColors.forEach((color) => {
       const colorDiv = document.createElement("div");
       colorDiv.className = "color-swatch";
       colorDiv.style.backgroundColor = color;
       colorDiv.addEventListener("click", () => {
-          currentColor = color; // Update current color on selection
-          colorPicker.value = rgbToHex(color); // Sync with color picker
+          currentColor = color; 
+          colorPicker.value = rgbToHex(color); // color picker
       });
       colorPalette.appendChild(colorDiv);
   });
 };
 
-// Convert RGB to Hex for syncing color picker
+// convert rgb to hex for updating color picker
 const rgbToHex = (rgb) => {
     const rgbArray = rgb.match(/\d+/g).map(Number);
     return `#${rgbArray.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
 };
 
-// Draw a block
+// draw block
 const drawBlock = (x, y, color) => {
     imageCtx.fillStyle = color;
     imageCtx.fillRect(x, y, blockSize, blockSize);
 };
 
-// Erase a block
+// erase block
 const eraseBlock = (x, y) => {
     if (!originalImage) {
         console.error("Original image not loaded, cannot erase.");
@@ -201,7 +197,7 @@ const eraseBlock = (x, y) => {
     );
 };
 
-// Get cursor position for mouse events
+// get cursor position
 const getScaledCursorPosition = (event) => {
     const rect = imageCanvas.getBoundingClientRect();
     const scaleX = imageCanvas.width / rect.width;
@@ -212,7 +208,7 @@ const getScaledCursorPosition = (event) => {
     };
 };
 
-// Get touch position for touch events
+// get touch position
 const getScaledTouchPosition = (event) => {
     const rect = imageCanvas.getBoundingClientRect();
     const scaleX = imageCanvas.width / rect.width;
@@ -224,7 +220,6 @@ const getScaledTouchPosition = (event) => {
     };
 };
 
-// Event Handlers for mouse
 imageCanvas.addEventListener("mousedown", (e) => {
     saveStateForUndo(); // Save state for undo
     isDrawing = true;
@@ -256,11 +251,10 @@ imageCanvas.addEventListener("mouseleave", () => {
     isDrawing = false;
 });
 
-// Event Handlers for touch
 imageCanvas.addEventListener("touchstart", (e) => {
     if (e.touches.length === 1) {
         e.preventDefault();
-        saveStateForUndo(); // Save state for undo
+        saveStateForUndo(); 
         isDrawing = true;
         const { x, y } = snapToGrid(
             ...Object.values(getScaledTouchPosition(e))
@@ -296,7 +290,6 @@ imageCanvas.addEventListener("touchend", (e) => {
     }
 });
 
-// Other event listeners
 colorPicker.addEventListener("change", (e) => {
     currentColor = e.target.value;
 });
@@ -307,7 +300,7 @@ eraserButton.addEventListener("click", (e) => {
     eraserButton.textContent = isErasing ? "Drawing Mode" : "Eraser";
 });
 
-// save the final project as both final and original image for gallery
+// save final project as both final and original image for gallery
 saveProjectButton?.addEventListener("click", async () => {
     const blob = await new Promise((resolve) =>
         imageCanvas.toBlob(resolve, "image/png")
@@ -331,7 +324,7 @@ saveProjectButton?.addEventListener("click", async () => {
         const result = await response.json();
         if (result.project_id) {
             console.log("Project saved successfully:", result);
-            projectId = result.project_id; // Update ID for later saves
+            projectId = result.project_id; // update id for later saves
         } else {
             console.error("Invalid response: missing project ID");
         }
@@ -349,8 +342,6 @@ downloadButton.addEventListener("click", (e) => {
     link.click();
 });
 
-
-// Initialize
 loadEditedImage().catch((err) =>
     console.error("Error loading edited image:", err)
 );
