@@ -18,7 +18,7 @@ let isDrawing = false;
 let isErasing = false;
 let currentColor = colorPicker.value;
 let originalImage;
-let undoStack = []; 
+let undoStack = [];
 
 const loadEditedImage = async () => {
     let img = new Image();
@@ -30,7 +30,9 @@ const loadEditedImage = async () => {
         if (storedBlockSize && !isNaN(storedBlockSize)) {
             blockSize = storedBlockSize;
         } else {
-            console.warn("Block size not found in localStorage, using default.");
+            console.warn(
+                "Block size not found in localStorage, using default."
+            );
             blockSize = 16;
         }
     } else {
@@ -44,7 +46,7 @@ const loadEditedImage = async () => {
             imageCanvas.height = img.height;
             gridCanvas.width = imageCanvas.width;
             gridCanvas.height = imageCanvas.height;
-            imageCtx.drawImage(img, 0, 0);          
+            imageCtx.drawImage(img, 0, 0);
             drawGrid();
             originalImage = img;
             saveStateForUndo();
@@ -57,13 +59,11 @@ const loadEditedImage = async () => {
             reject(e);
         };
     });
-
 };
-
 
 const drawGrid = () => {
     // clear previous grid
-    gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height); 
+    gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
     gridCtx.save();
     gridCtx.strokeStyle = "rgba(255, 255, 255, 0.3)";
     gridCtx.lineWidth = 1;
@@ -128,42 +128,49 @@ resetButton.addEventListener("click", () => {
 
 // get top 16 colors from image
 const extractTopColors = () => {
-  const tempCanvas = document.createElement("canvas");
-  const tempCtx = tempCanvas.getContext("2d");
-  tempCanvas.width = imageCanvas.width;
-  tempCanvas.height = imageCanvas.height;
+    const tempCanvas = document.createElement("canvas");
+    const tempCtx = tempCanvas.getContext("2d");
+    tempCanvas.width = imageCanvas.width;
+    tempCanvas.height = imageCanvas.height;
 
-  tempCtx.drawImage(originalImage, 0, 0);
-  const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height).data;
+    tempCtx.drawImage(originalImage, 0, 0);
+    const imageData = tempCtx.getImageData(
+        0,
+        0,
+        tempCanvas.width,
+        tempCanvas.height
+    ).data;
 
-  const colorCounts = {};
-  for (let i = 0; i < imageData.length; i += 4) {
-      const r = imageData[i];
-      const g = imageData[i + 1];
-      const b = imageData[i + 2];
-      const a = imageData[i + 3];
-      if (a === 0) continue; // ignore transparent pixels
-      const color = `rgb(${r},${g},${b})`;
-      colorCounts[color] = (colorCounts[color] || 0) + 1;
-  }
+    const colorCounts = {};
+    for (let i = 0; i < imageData.length; i += 4) {
+        const r = imageData[i];
+        const g = imageData[i + 1];
+        const b = imageData[i + 2];
+        const a = imageData[i + 3];
+        if (a === 0) continue; // ignore transparent pixels
+        const color = `rgb(${r},${g},${b})`;
+        colorCounts[color] = (colorCounts[color] || 0) + 1;
+    }
 
-  const topColors = Object.entries(colorCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 16)
-      .map(([color]) => color);
+    const topColors = Object.entries(colorCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 16)
+        .map(([color]) => color);
 
-  // render color palette
-  colorPalette.innerHTML = "";
-  topColors.forEach((color) => {
-      const colorDiv = document.createElement("div");
-      colorDiv.className = "color-swatch";
-      colorDiv.style.backgroundColor = color;
-      colorDiv.addEventListener("click", () => {
-          currentColor = color; 
-          colorPicker.value = rgbToHex(color); // color picker
-      });
-      colorPalette.appendChild(colorDiv);
-  });
+    // render color palette
+    colorPalette.innerHTML = "";
+    topColors.forEach((color) => {
+        const colorDiv = document.createElement("div");
+        colorDiv.className = "color-swatch";
+        colorDiv.style.backgroundColor = color;
+        colorDiv.addEventListener("click", () => {
+            isErasing = false;
+            eraserButton.textContent = "Eraser";
+            currentColor = color;
+            colorPicker.value = rgbToHex(color);
+        });
+        colorPalette.appendChild(colorDiv);
+    });
 };
 
 // convert rgb to hex for updating color picker
@@ -254,7 +261,7 @@ imageCanvas.addEventListener("mouseleave", () => {
 imageCanvas.addEventListener("touchstart", (e) => {
     if (e.touches.length === 1) {
         e.preventDefault();
-        saveStateForUndo(); 
+        saveStateForUndo();
         isDrawing = true;
         const { x, y } = snapToGrid(
             ...Object.values(getScaledTouchPosition(e))
@@ -292,6 +299,8 @@ imageCanvas.addEventListener("touchend", (e) => {
 
 colorPicker.addEventListener("change", (e) => {
     currentColor = e.target.value;
+    isErasing = false;
+    eraserButton.textContent = "Eraser";
 });
 
 eraserButton.addEventListener("click", (e) => {
@@ -305,8 +314,10 @@ saveProjectButton?.addEventListener("click", async () => {
     const blob = await new Promise((resolve) =>
         imageCanvas.toBlob(resolve, "image/png")
     );
-    const storedBlockSize = parseInt(localStorage.getItem("blockSize"), 10) || 16;
-    const storedPaletteSize = parseInt(localStorage.getItem("paletteSize"), 10) || 128;
+    const storedBlockSize =
+        parseInt(localStorage.getItem("blockSize"), 10) || 16;
+    const storedPaletteSize =
+        parseInt(localStorage.getItem("paletteSize"), 10) || 128;
     const formData = new FormData();
     formData.append("original_image", new File([blob], "original.png"));
     formData.append("edited_image", new File([blob], "edited.png"));
@@ -332,7 +343,6 @@ saveProjectButton?.addEventListener("click", async () => {
         console.error("Error saving the project:", error);
     }
 });
-
 
 downloadButton.addEventListener("click", (e) => {
     e.preventDefault();
