@@ -2,8 +2,8 @@ To view my self-hosted project, navigate to [katan.axolotl-acrux.ts.net](https:/
 
 # Piksul
 
-Piksul is a pixel art reconstruction and deartifacting tool that applies modified run-length encoding and variance analysis to restore deformed or blurry pixel art to its intended grid alignment, with additional manual editing and project management features. It simplifies the hard part of editing pixel art- the grid alignment, determination of block size, and the removal of artifacts from data loss or AI. 
-The editor page does automatic calculations and grid-snapping and allows you color palette quantization. You can transfer your project to the Sketch page to continue with manual editing. Your project and project metadata (block size, most common colors in your palette, etc.) will be transferred via local storage. From either editor, you save your project to the gallery, from which you can retrieve and continue editing your projects.
+Piksul is a pixel art reconstruction and deartifacting tool that uses modified run-length encoding and variance analysis to restore deformed or blurry pixel art to its original grid alignment. It automates the challenging aspects of editing existing pixel art, including grid alignment, block size determination, and artifact removal caused by data loss or AI-generated distortions.
+The editor page performs automatic calculations, grid-snapping, and allows palette quantization. Projects can be transferred to the Sketch page for manual refinement, with project data (e.g., block size, palette colors) transferred via local storage. From either editor, projects can be saved to the gallery for retrieval and continued editing.
 ![Homepage](./public/img/image.png) 
 ![Automatic editor](./public/img/image-3.png)
 ![Sketch](./public/img/image-2.png)
