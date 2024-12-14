@@ -299,6 +299,10 @@ slider?.addEventListener("input", () => {
 });
 
 document.addEventListener("DOMContentLoaded", async () => {
+    const yearElement = document.getElementById("year");
+    if (yearElement) {
+        yearElement.textContent = new Date().getFullYear();
+    }
     // Set up editor after open project is clicked in gallery
     const editorMain = document.getElementById("editor");
     const gallery = document.getElementById("gallery");

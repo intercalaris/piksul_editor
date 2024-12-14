@@ -87,7 +87,25 @@ header .user-buttons {
     justify-content: flex-end;
     gap: 2rem;
 }
+footer {
+    padding: 0.8rem 6rem;
+    background: rgb(13, 2, 32);
+    color: #4d3f97;
+    font-size: 1.5rem;
+    display: flex;
+    justify-content: flex-end;
+    border-top: 1px solid #16122f;
+}
+footer a {
+    color: #8470e9;
+    text-decoration: none;
+    margin-left: 0.3rem;
+}
 
+#copyright {
+    font-family: "Times New Roman";
+    margin-left: 0.1rem;
+}
 #open-sketch, .open-sketch {
 	border: 2.5px solid #8470e9;
 }
@@ -174,6 +192,7 @@ main {
     justify-content: space-around;
     
 }
+
 .project-card {
     display: flex;
     width: 35rem;
@@ -184,6 +203,9 @@ main {
     border-radius: 15px;
     padding: 2rem;
     font-size: 1.7rem;
+}
+.project-card.blank-card {
+    box-shadow: none;
 }
 .project-card img {
     width: 100%;

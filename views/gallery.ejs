@@ -30,10 +30,10 @@
       <% } else { %>
         <% projects.forEach(project => { %>
           <div	class="project-card" 
-				data-id="<%= project.id %>"
-				data-block-size="<%= project.block_size %>"
-				data-palette-size="<%= project.palette_size %>"
-				data-edited-image="<%= project.edited_image %>">
+                data-id="<%= project.id %>"
+                data-block-size="<%= project.block_size %>"
+                data-palette-size="<%= project.palette_size %>"
+                data-edited-image="<%= project.edited_image %>">
 
             <img src="/gallery/image/<%= project.edited_image %>" alt="Project Thumbnail">
             <div class="bottom-project-card">
@@ -52,6 +52,11 @@
           </div>
         <% }); %>
       <% } %>
+      <div  class="project-card blank-card"></div>
+      <div  class="project-card blank-card"></div>
+      <div  class="project-card blank-card"></div>
+      <div  class="project-card blank-card"></div>
+      <div  class="project-card blank-card"></div>
     </section>
   </main>
   <script type="text/javascript" src="/js/main.js"></script>

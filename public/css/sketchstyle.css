@@ -194,6 +194,16 @@ canvas {
 
 }
 
+#destructive-tools {
+    display: flex;
+}
+#undoButton {
+    margin: 4px 2px 4px 8px;
+}
+#resetButton {
+    margin: 4px 8px 4px 2px;
+}
+
 
 .color-palette {
     display: grid;

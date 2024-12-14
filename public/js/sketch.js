@@ -12,10 +12,12 @@ const downloadButton = document.getElementById("downloadButton");
 const imageCanvas = document.getElementById("imageCanvas");
 const canvasContainer = document.getElementById("canvas-container");
 const gridCanvas = document.getElementById("gridCanvas");
-const imageCtx = imageCanvas.getContext("2d");
+const imageCtx = imageCanvas.getContext("2d", { willReadFrequently: true });
 const gridCtx = gridCanvas.getContext("2d");
+const paintBucketButton = document.getElementById("paintBucketButton");
 let isDrawing = false;
 let isErasing = false;
+let isPaintBucketActive = false;
 let currentColor = colorPicker.value;
 let originalImage;
 let undoStack = [];
@@ -114,6 +116,106 @@ undoButton.addEventListener("click", () => {
     };
 });
 
+const floodFill = (startX, startY) => {
+    const imageData = imageCtx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
+    const pixelData = imageData.data;
+
+    // get starting pixel position
+    const pixelIndex = (startY * imageCanvas.width + startX) * 4;
+    const startColor = {
+        r: pixelData[pixelIndex],
+        g: pixelData[pixelIndex + 1],
+        b: pixelData[pixelIndex + 2],
+        a: pixelData[pixelIndex + 3],
+    };
+
+    // if startColor matches currentColor, return
+    const currentColorRGB = hexToRGB(currentColor);
+    if (
+        startColor.r === currentColorRGB.r &&
+        startColor.g === currentColorRGB.g &&
+        startColor.b === currentColorRGB.b
+    ) {
+        return;
+    }
+
+    const pixelStack = [[startX, startY]];
+
+    const matchStartColor = (index) => {
+        return (
+            pixelData[index] === startColor.r &&
+            pixelData[index + 1] === startColor.g &&
+            pixelData[index + 2] === startColor.b &&
+            pixelData[index + 3] === startColor.a
+        );
+    };
+
+    const colorPixel = (index) => {
+        pixelData[index] = currentColorRGB.r;
+        pixelData[index + 1] = currentColorRGB.g;
+        pixelData[index + 2] = currentColorRGB.b;
+        pixelData[index + 3] = 255;
+    };
+
+    while (pixelStack.length) {
+        let [x, y] = pixelStack.pop();
+        let pixelPos = (y * imageCanvas.width + x) * 4;
+    
+        // up while color match
+        while (y >= 0 && matchStartColor(pixelPos)) {
+            y--;
+            pixelPos -= imageCanvas.width * 4;
+        }
+    
+        pixelPos += imageCanvas.width * 4;
+        y++;
+        let reachLeft = false;
+        let reachRight = false;
+    
+        // down while color match
+        while (y < imageCanvas.height && matchStartColor(pixelPos)) {
+            colorPixel(pixelPos);
+    
+            if (x > 0) {
+                if (matchStartColor(pixelPos - 4)) {
+                    if (!reachLeft) {
+                        pixelStack.push([x - 1, y]);
+                        reachLeft = true;
+                    }
+                } else {
+                    reachLeft = false;
+                }
+            }
+    
+            if (x < imageCanvas.width - 1) {
+                if (matchStartColor(pixelPos + 4)) {
+                    if (!reachRight) {
+                        pixelStack.push([x + 1, y]);
+                        reachRight = true;
+                    }
+                } else {
+                    reachRight = false;
+                }
+            }
+    
+            y++;
+            pixelPos += imageCanvas.width * 4;
+        }
+    }
+    
+
+    imageCtx.putImageData(imageData, 0, 0);
+};
+
+const hexToRGB = (hex) => {
+    const bigint = parseInt(hex.slice(1), 16);
+    return {
+        r: (bigint >> 16) & 255,
+        g: (bigint >> 8) & 255,
+        b: bigint & 255,
+    };
+};
+
 // reset to original image
 resetButton.addEventListener("click", () => {
     if (!originalImage) {
@@ -196,13 +298,14 @@ const eraseBlock = (x, y) => {
         x,
         y,
         blockSize,
-        blockSize, // origin position and size
+        blockSize, // inital position and size
         x,
         y,
         blockSize,
         blockSize // target position and size
     );
 };
+
 
 // get cursor position
 const getScaledCursorPosition = (event) => {
@@ -228,15 +331,20 @@ const getScaledTouchPosition = (event) => {
 };
 
 imageCanvas.addEventListener("mousedown", (e) => {
-    saveStateForUndo(); // Save state for undo
+    saveStateForUndo(); 
     isDrawing = true;
     const { x, y } = snapToGrid(...Object.values(getScaledCursorPosition(e)));
 
-    if (isErasing) {
+    if (isPaintBucketActive) {
+        saveStateForUndo();
+        const { x, y } = snapToGrid(...Object.values(getScaledCursorPosition(e)));
+        floodFill(x, y);
+    } else if (isErasing) {
         eraseBlock(x, y);
     } else {
         drawBlock(x, y, currentColor);
     }
+    
 });
 
 imageCanvas.addEventListener("mousemove", (e) => {
@@ -308,6 +416,17 @@ eraserButton.addEventListener("click", (e) => {
     isErasing = !isErasing;
     eraserButton.textContent = isErasing ? "Drawing Mode" : "Eraser";
 });
+
+
+paintBucketButton.addEventListener("click", (e) => {
+    e.preventDefault();
+    isPaintBucketActive = true;
+    isErasing = false;
+    isDrawing = false;
+    eraserButton.textContent = "Eraser";
+    paintBucketButton.textContent = "Active";
+});
+
 
 // save final project as both final and original image for gallery
 saveProjectButton?.addEventListener("click", async () => {
