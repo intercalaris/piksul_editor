@@ -293,16 +293,19 @@ const extractTopColors = () => {
     topColors.forEach((color) => {
         const colorDiv = document.createElement("div");
         colorDiv.className = "color-swatch";
-        colorDiv.style.backgroundColor = color;
+        colorDiv.style.backgroundColor = color;    
         colorDiv.addEventListener("click", () => {
-            if (!isDrawing) {
+            if (isErasing || isPaintFilling) {
                 isErasing = false;
-                isDrawing = true;
+                isPaintFilling = false;
             }
-            currentColor = rgbToHex(color); 
-            colorPicker.value = currentColor; 
-            highlightSelectedTool(); 
-        });        
+            currentColor = rgbToHex(color);
+            colorPicker.value = currentColor;
+            highlightSelectedTool();
+        });
+
+        
+          
         colorPalette.appendChild(colorDiv);
     });
 };
@@ -363,16 +366,15 @@ const getScaledTouchPosition = (event) => {
 };
 
 imageCanvas.addEventListener("mousedown", (e) => {
-    e.preventDefault(); 
+    e.preventDefault();
     const { x, y } = snapToGrid(getScaledCursorPosition(e).x, getScaledCursorPosition(e).y);
 
     if (isPaintFilling) {
         saveStateForUndo();
         floodFill(x, y);
-        
     } else {
-        isDrawing = true;
         saveStateForUndo();
+        isDrawing = true; 
         if (isErasing) {
             eraseBlock(x, y);
         } else {
@@ -381,9 +383,8 @@ imageCanvas.addEventListener("mousedown", (e) => {
     }
 });
 
-
 imageCanvas.addEventListener("mousemove", (e) => {
-    if (!isDrawing || isPaintFilling) return;
+    if (!isDrawing || isPaintFilling) return; 
     const { x, y } = snapToGrid(getScaledCursorPosition(e).x, getScaledCursorPosition(e).y);
 
     if (isErasing) {
@@ -393,9 +394,8 @@ imageCanvas.addEventListener("mousemove", (e) => {
     }
 });
 
-
 imageCanvas.addEventListener("mouseup", () => {
-    isDrawing = false;
+    isDrawing = false; 
 });
 
 imageCanvas.addEventListener("mouseleave", () => {
@@ -462,9 +462,9 @@ imageCanvas.addEventListener("touchend", (e) => {
 
 colorPicker.addEventListener("change", (e) => {
     currentColor = e.target.value;
-    if (isErasing || !isDrawing) {
+    if (isErasing || isPaintFilling) {
         isErasing = false;
-        isDrawing = true;
+        isPaintFilling = false;
     }
     highlightSelectedTool();
 });
@@ -475,7 +475,6 @@ drawButton.addEventListener("click", (e) => {
     e.preventDefault();
     isErasing = false;
     isPaintFilling = false;
-    isDrawing = true; 
     highlightSelectedTool(); 
 });
 
