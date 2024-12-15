@@ -19,6 +19,7 @@ const paintFillButton = document.getElementById("paintFillButton");
 let isDrawing = false;
 let isErasing = false;
 let isPaintFilling = false;
+let isTouchMoved = false;
 let currentColor = colorPicker.value;
 let originalImage;
 let undoStack = [];
@@ -103,7 +104,22 @@ const saveStateForUndo = () => {
     }
 };
 
-undoButton.addEventListener("click", () => {
+const highlightSelectedTool = () => {
+    drawButton.classList.remove("selected");
+    eraseButton.classList.remove("selected");
+    paintFillButton.classList.remove("selected");
+
+    if (isPaintFilling) {
+        paintFillButton.classList.add("selected");
+    } else if (isErasing) {
+        eraseButton.classList.add("selected");
+    } else if (isDrawing) {
+        drawButton.classList.add("selected");
+    }
+};
+
+undoButton.addEventListener("click", (e) => {
+    e.preventDefault();
     if (undoStack.length === 0) {
         alert("No actions to undo.");
         return;
@@ -118,9 +134,9 @@ undoButton.addEventListener("click", () => {
     };
     setTimeout(() => {
         undoButton.classList.remove("selected");
-      }, "400");
-
+    }, 400);
 });
+
 
 const floodFill = (startX, startY) => {
     const imageData = imageCtx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
@@ -225,7 +241,8 @@ const hexToRGB = (hex) => {
 };
 
 // reset to original image
-resetButton.addEventListener("click", () => {
+resetButton.addEventListener("click", (e) => {
+    e.preventDefault();
     if (!originalImage) {
         console.error("Original image not loaded, cannot reset.");
         return;
@@ -233,11 +250,11 @@ resetButton.addEventListener("click", () => {
     resetButton.classList.add("selected");
     imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
     imageCtx.drawImage(originalImage, 0, 0);
-    drawGrid(); // Redraw the grid
-    undoStack = []; // Clear undo stack
+    drawGrid(); 
+    undoStack = []; 
     setTimeout(() => {
         resetButton.classList.remove("selected");
-      }, "400");
+    }, 400);
 });
 
 // get top 16 colors from image
@@ -278,11 +295,14 @@ const extractTopColors = () => {
         colorDiv.className = "color-swatch";
         colorDiv.style.backgroundColor = color;
         colorDiv.addEventListener("click", () => {
-            isErasing = false;
+            if (isErasing) {
+                isErasing = false;
+                isDrawing = true;
+            }
             currentColor = rgbToHex(color); 
             colorPicker.value = currentColor; 
+            highlightSelectedTool(); 
         });
-        
         colorPalette.appendChild(colorDiv);
     });
 };
@@ -343,25 +363,28 @@ const getScaledTouchPosition = (event) => {
 };
 
 imageCanvas.addEventListener("mousedown", (e) => {
-    saveStateForUndo(); 
-    isDrawing = true;
-    const { x, y } = snapToGrid(...Object.values(getScaledCursorPosition(e)));
+    e.preventDefault(); 
+    const { x, y } = snapToGrid(getScaledCursorPosition(e).x, getScaledCursorPosition(e).y);
 
     if (isPaintFilling) {
         saveStateForUndo();
-        const { x, y } = snapToGrid(...Object.values(getScaledCursorPosition(e)));
         floodFill(x, y);
-    } else if (isErasing) {
-        eraseBlock(x, y);
+        
     } else {
-        drawBlock(x, y, currentColor);
+        isDrawing = true;
+        saveStateForUndo();
+        if (isErasing) {
+            eraseBlock(x, y);
+        } else {
+            drawBlock(x, y, currentColor);
+        }
     }
-    
 });
 
+
 imageCanvas.addEventListener("mousemove", (e) => {
-    if (!isDrawing) return;
-    const { x, y } = snapToGrid(...Object.values(getScaledCursorPosition(e)));
+    if (!isDrawing || isPaintFilling) return;
+    const { x, y } = snapToGrid(getScaledCursorPosition(e).x, getScaledCursorPosition(e).y);
 
     if (isErasing) {
         eraseBlock(x, y);
@@ -369,6 +392,7 @@ imageCanvas.addEventListener("mousemove", (e) => {
         drawBlock(x, y, currentColor);
     }
 });
+
 
 imageCanvas.addEventListener("mouseup", () => {
     isDrawing = false;
@@ -380,78 +404,101 @@ imageCanvas.addEventListener("mouseleave", () => {
 
 imageCanvas.addEventListener("touchstart", (e) => {
     if (e.touches.length === 1) {
-        e.preventDefault();
-        saveStateForUndo();
-        isDrawing = true;
-        const { x, y } = snapToGrid(
-            ...Object.values(getScaledTouchPosition(e))
-        );
+        isTouchMoved = false;
+        const { x, y } = snapToGrid(getScaledTouchPosition(e).x, getScaledTouchPosition(e).y);
 
-        if (isErasing) {
-            eraseBlock(x, y);
+        if (isPaintFilling) {
+            saveStateForUndo();
+            floodFill(x, y);
         } else {
-            drawBlock(x, y, currentColor);
+            isDrawing = true;
+            saveStateForUndo();
+            if (isErasing) {
+                eraseBlock(x, y);
+            } else {
+                drawBlock(x, y, currentColor);
+            }
         }
     }
 });
 
 imageCanvas.addEventListener("touchmove", (e) => {
     if (e.touches.length === 1) {
-        e.preventDefault();
-        if (!isDrawing) return;
-        const { x, y } = snapToGrid(
-            ...Object.values(getScaledTouchPosition(e))
-        );
+        const touch = e.touches[0];
+        const { x, y } = snapToGrid(getScaledTouchPosition(e).x, getScaledTouchPosition(e).y);
+        const deltaX = Math.abs(x - snapToGrid(getScaledTouchPosition(e).x, getScaledTouchPosition(e).y).x);
+        const deltaY = Math.abs(y - snapToGrid(getScaledTouchPosition(e).x, getScaledTouchPosition(e).y).y);
 
-        if (isErasing) {
-            eraseBlock(x, y);
-        } else {
-            drawBlock(x, y, currentColor);
+        if (deltaX > 2 || deltaY > 2) {
+            isTouchMoved = true;
+        }
+        // don't want drawing if paintfilling active
+        if (isPaintFilling) {
+            return;
+        }
+
+        if (isDrawing) {
+            e.preventDefault();
+            if (isErasing) {
+                eraseBlock(x, y);
+            } else {
+                drawBlock(x, y, currentColor);
+            }
         }
     }
 });
 
+
 imageCanvas.addEventListener("touchend", (e) => {
-    if (e.touches.length === 0) {
-        isDrawing = false;
+    if (isPaintFilling && !isTouchMoved) {
+        const touch = e.changedTouches[0];
+        const { x, y } = snapToGrid(getScaledTouchPosition(e).x, getScaledTouchPosition(e).y);
+        saveStateForUndo();
+        floodFill(x, y);
     }
+    isDrawing = false;
+    isTouchMoved = false;
 });
+
 
 colorPicker.addEventListener("change", (e) => {
     currentColor = e.target.value;
-    isErasing = false;
+    if (isErasing) {
+        isErasing = false;
+        isDrawing = true;
+    }
+    highlightSelectedTool();
 });
+
+
 drawButton.addEventListener("click", (e) => {
     e.preventDefault();
     isErasing = false;
     isPaintFilling = false;
-    drawButton.classList.add("selected");
-    eraseButton.classList.remove("selected");
-    paintFillButton.classList.remove("selected");
-})
+    isDrawing = true; 
+    highlightSelectedTool(); 
+});
+
 eraseButton.addEventListener("click", (e) => {
     e.preventDefault();
     isErasing = true;
     isPaintFilling = false;
-    eraseButton.classList.add("selected");
-    drawButton.classList.remove("selected");
-    paintFillButton.classList.remove("selected");
+    isDrawing = false;
+    highlightSelectedTool();
 });
-
 
 paintFillButton.addEventListener("click", (e) => {
     e.preventDefault();
     isPaintFilling = true;
     isErasing = false;
     isDrawing = false;
-    paintFillButton.classList.add("selected");
-    drawButton.classList.remove("selected");
-    eraseButton.classList.remove("selected");
+    highlightSelectedTool(); 
 });
 
 
 // save final project as both final and original image for gallery
-saveProjectButton?.addEventListener("click", async () => {
+saveProjectButton?.addEventListener("click", async (e) => {
+    e.preventDefault();
     const blob = await new Promise((resolve) =>
         imageCanvas.toBlob(resolve, "image/png")
     );
@@ -476,7 +523,7 @@ saveProjectButton?.addEventListener("click", async () => {
         const result = await response.json();
         if (result.project_id) {
             console.log("Project saved successfully:", result);
-            projectId = result.project_id; // update id for later saves
+            projectId = result.project_id; // Update ID for later saves
         } else {
             console.error("Invalid response: missing project ID");
         }
@@ -484,6 +531,7 @@ saveProjectButton?.addEventListener("click", async () => {
         console.error("Error saving the project:", error);
     }
 });
+
 
 downloadButton.addEventListener("click", (e) => {
     e.preventDefault();
