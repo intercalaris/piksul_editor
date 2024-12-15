@@ -108,6 +108,7 @@ undoButton.addEventListener("click", () => {
         alert("No actions to undo.");
         return;
     }
+    undoButton.classList.add("selected");
     const previousState = undoStack.pop();
     const img = new Image();
     img.src = previousState;
@@ -115,6 +116,10 @@ undoButton.addEventListener("click", () => {
         imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
         imageCtx.drawImage(img, 0, 0);
     };
+    setTimeout(() => {
+        undoButton.classList.remove("selected");
+      }, "400");
+
 });
 
 const floodFill = (startX, startY) => {
@@ -152,11 +157,13 @@ const floodFill = (startX, startY) => {
     };
 
     const colorPixel = (index) => {
-        pixelData[index] = currentColorRGB.r;
-        pixelData[index + 1] = currentColorRGB.g;
-        pixelData[index + 2] = currentColorRGB.b;
+        const { r, g, b } = hexToRGB(currentColor);
+        pixelData[index] = r;
+        pixelData[index + 1] = g;
+        pixelData[index + 2] = b;
         pixelData[index + 3] = 255;
     };
+    
 
     while (pixelStack.length) {
         let [x, y] = pixelStack.pop();
@@ -223,10 +230,14 @@ resetButton.addEventListener("click", () => {
         console.error("Original image not loaded, cannot reset.");
         return;
     }
+    resetButton.classList.add("selected");
     imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
     imageCtx.drawImage(originalImage, 0, 0);
     drawGrid(); // Redraw the grid
     undoStack = []; // Clear undo stack
+    setTimeout(() => {
+        resetButton.classList.remove("selected");
+      }, "400");
 });
 
 // get top 16 colors from image
@@ -268,9 +279,10 @@ const extractTopColors = () => {
         colorDiv.style.backgroundColor = color;
         colorDiv.addEventListener("click", () => {
             isErasing = false;
-            currentColor = color;
-            colorPicker.value = rgbToHex(color);
+            currentColor = rgbToHex(color); 
+            colorPicker.value = currentColor; 
         });
+        
         colorPalette.appendChild(colorDiv);
     });
 };

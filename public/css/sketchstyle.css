@@ -168,7 +168,7 @@ canvas {
 }
 
 .selected {
-    border-color: rgb(138, 114, 246);
+    border-color: rgb(107, 202, 142);
 }
 .color-palette {
     display: grid;
