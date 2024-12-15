@@ -295,14 +295,14 @@ const extractTopColors = () => {
         colorDiv.className = "color-swatch";
         colorDiv.style.backgroundColor = color;
         colorDiv.addEventListener("click", () => {
-            if (isErasing) {
+            if (!isDrawing) {
                 isErasing = false;
                 isDrawing = true;
             }
             currentColor = rgbToHex(color); 
             colorPicker.value = currentColor; 
             highlightSelectedTool(); 
-        });
+        });        
         colorPalette.appendChild(colorDiv);
     });
 };
@@ -460,15 +460,15 @@ imageCanvas.addEventListener("touchend", (e) => {
     isTouchMoved = false;
 });
 
-
 colorPicker.addEventListener("change", (e) => {
     currentColor = e.target.value;
-    if (isErasing) {
+    if (isErasing || !isDrawing) {
         isErasing = false;
         isDrawing = true;
     }
     highlightSelectedTool();
 });
+
 
 
 drawButton.addEventListener("click", (e) => {
