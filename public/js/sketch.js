@@ -339,7 +339,6 @@ const eraseBlock = (x, y) => {
 };
 
 
-// get cursor position
 const getScaledCursorPosition = (event) => {
     const rect = imageCanvas.getBoundingClientRect();
     const scaleX = imageCanvas.width / rect.width;
@@ -350,7 +349,6 @@ const getScaledCursorPosition = (event) => {
     };
 };
 
-// get touch position
 const getScaledTouchPosition = (event) => {
     const rect = imageCanvas.getBoundingClientRect();
     const scaleX = imageCanvas.width / rect.width;
