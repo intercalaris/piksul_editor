@@ -3,7 +3,8 @@ let projectId = sketch.dataset.projectId;
 const editedImageFilename = sketch.dataset.editedImage;
 let blockSize = parseInt(sketch.dataset.blockSize, 10);
 const colorPicker = document.getElementById("colorPicker");
-const eraserButton = document.getElementById("eraserButton");
+const drawButton = document.getElementById("drawButton");
+const eraseButton = document.getElementById("eraseButton");
 const undoButton = document.getElementById("undoButton");
 const resetButton = document.getElementById("resetButton");
 const colorPalette = document.getElementById("colorPalette");
@@ -14,10 +15,10 @@ const canvasContainer = document.getElementById("canvas-container");
 const gridCanvas = document.getElementById("gridCanvas");
 const imageCtx = imageCanvas.getContext("2d", { willReadFrequently: true });
 const gridCtx = gridCanvas.getContext("2d");
-const paintBucketButton = document.getElementById("paintBucketButton");
+const paintFillButton = document.getElementById("paintFillButton");
 let isDrawing = false;
 let isErasing = false;
-let isPaintBucketActive = false;
+let isPaintFilling = false;
 let currentColor = colorPicker.value;
 let originalImage;
 let undoStack = [];
@@ -267,7 +268,6 @@ const extractTopColors = () => {
         colorDiv.style.backgroundColor = color;
         colorDiv.addEventListener("click", () => {
             isErasing = false;
-            eraserButton.textContent = "Eraser";
             currentColor = color;
             colorPicker.value = rgbToHex(color);
         });
@@ -335,7 +335,7 @@ imageCanvas.addEventListener("mousedown", (e) => {
     isDrawing = true;
     const { x, y } = snapToGrid(...Object.values(getScaledCursorPosition(e)));
 
-    if (isPaintBucketActive) {
+    if (isPaintFilling) {
         saveStateForUndo();
         const { x, y } = snapToGrid(...Object.values(getScaledCursorPosition(e)));
         floodFill(x, y);
@@ -408,23 +408,33 @@ imageCanvas.addEventListener("touchend", (e) => {
 colorPicker.addEventListener("change", (e) => {
     currentColor = e.target.value;
     isErasing = false;
-    eraserButton.textContent = "Eraser";
+});
+drawButton.addEventListener("click", (e) => {
+    e.preventDefault();
+    isErasing = false;
+    isPaintFilling = false;
+    drawButton.classList.add("selected");
+    eraseButton.classList.remove("selected");
+    paintFillButton.classList.remove("selected");
+})
+eraseButton.addEventListener("click", (e) => {
+    e.preventDefault();
+    isErasing = true;
+    isPaintFilling = false;
+    eraseButton.classList.add("selected");
+    drawButton.classList.remove("selected");
+    paintFillButton.classList.remove("selected");
 });
 
-eraserButton.addEventListener("click", (e) => {
-    e.preventDefault();
-    isErasing = !isErasing;
-    eraserButton.textContent = isErasing ? "Drawing Mode" : "Eraser";
-});
 
-
-paintBucketButton.addEventListener("click", (e) => {
+paintFillButton.addEventListener("click", (e) => {
     e.preventDefault();
-    isPaintBucketActive = true;
+    isPaintFilling = true;
     isErasing = false;
     isDrawing = false;
-    eraserButton.textContent = "Eraser";
-    paintBucketButton.textContent = "Active";
+    paintFillButton.classList.add("selected");
+    drawButton.classList.remove("selected");
+    eraseButton.classList.remove("selected");
 });
 
 
