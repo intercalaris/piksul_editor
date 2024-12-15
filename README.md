@@ -6,8 +6,8 @@ Piksul is a pixel art reconstruction and deartifacting tool that uses modified r
 
 The editor page performs automatic calculations, grid-snapping, and allows palette quantization. Projects can be transferred to the Sketch page for manual refinement, with project data (e.g., block size, palette colors) updated and transferred via local storage. From either editor, projects can be saved to the server and displayed in the gallery for retrieval and continued editing.
 ![Homepage](./public/img/image.png) 
-![Automatic editor](./public/img/image-3.png)
-![Sketch](./public/img/image-2.png)
+![Automatic editor](./public/img/Editor.png)
+![Sketch](./public/img/Sketch.png)
 
 ## Tech Stack
 
