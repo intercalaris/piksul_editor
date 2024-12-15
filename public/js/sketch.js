@@ -113,7 +113,7 @@ const highlightSelectedTool = () => {
         paintFillButton.classList.add("selected");
     } else if (isErasing) {
         eraseButton.classList.add("selected");
-    } else if (isDrawing) {
+    } else{
         drawButton.classList.add("selected");
     }
 };
@@ -295,16 +295,13 @@ const extractTopColors = () => {
         colorDiv.className = "color-swatch";
         colorDiv.style.backgroundColor = color;    
         colorDiv.addEventListener("click", () => {
-            if (isErasing || isPaintFilling) {
+            if (isErasing) {
                 isErasing = false;
-                isPaintFilling = false;
             }
             currentColor = rgbToHex(color);
             colorPicker.value = currentColor;
             highlightSelectedTool();
         });
-
-        
           
         colorPalette.appendChild(colorDiv);
     });
@@ -462,9 +459,8 @@ imageCanvas.addEventListener("touchend", (e) => {
 
 colorPicker.addEventListener("change", (e) => {
     currentColor = e.target.value;
-    if (isErasing || isPaintFilling) {
+    if (isErasing) {
         isErasing = false;
-        isPaintFilling = false;
     }
     highlightSelectedTool();
 });
