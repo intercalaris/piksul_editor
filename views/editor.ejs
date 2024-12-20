@@ -56,12 +56,12 @@
         </div>
         <div id="controls" class="hidden">
           <div id="block-controls">
-            <label for="blockSizeInput">Block Size: </label>
-            <input type="number" id="blockSizeInput" min="4" max="180">
+            <label for="block-size-input">Block Size: </label>
+            <input type="number" id="block-size-input" min="4" max="180">
           </div>
           <div id="palette-controls">
-            <label for="paletteSizeSelect">Palette Size: </label>
-            <select id="paletteSizeSelect">
+            <label for="palette-size-select">Palette Size: </label>
+            <select id="palette-size-select">
               <option value="" <%= project.palette_size ? "" : "selected" %>>None</option>
               <option value="2" <%= project.palette_size == 2 ? "selected" : "" %>>2 Colors</option>
               <option value="3" <%= project.palette_size == 3 ? "selected" : "" %>>3 Colors</option>
@@ -73,11 +73,11 @@
               <option value="128" <%= project.palette_size == 128 ? "selected" : "" %>>128 Colors</option>
             </select>
           </div>
-          <a class="button hidden" id="toggleColorChangeMapButton">Show Color Change Map</a>
+          <a class="button hidden" id="toggle-color-change-map-button">Show Color Change Map</a>
         </div>
         <div id="output-options" class="hidden">
           <a href="#" class="button hidden" id="open-sketch">Open in Sketch</a>
-          <a class="button hidden" id="downloadButton">Download Image</a> 
+          <a class="button hidden" id="download-button">Download Image</a> 
           <a href="#" class="button hidden" id="save-project" class="button save-project">Publish to Site</a>
         </div>
       </div>

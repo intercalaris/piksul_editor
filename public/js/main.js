@@ -1,16 +1,16 @@
 const uploadInput = document.getElementById("upload");
-const downloadButton = document.getElementById("downloadButton");
-const blockSizeInput = document.getElementById("blockSizeInput");
+const downloadButton = document.getElementById("download-button");
+const blockSizeInput = document.getElementById("block-size-input");
 const controls = document.getElementById("controls");
 const outputOptions = document.getElementById("output-options");
 const divisor = document.getElementById("divisor");
 const slider = document.getElementById("slider");
 const comparison = document.getElementById("comparison");
-const startProjectButton = document.getElementById("startProjectButton");
+// const startProjectButton = document.getElementById("start-project-button");
 const saveProjectButton = document.getElementById("save-project");
 const deleteProjectButtons = document.querySelectorAll(".delete-project");
-const viewSavedProjectsButton = document.getElementById("viewSavedProjectsButton");
-const paletteSizeSelect = document.getElementById("paletteSizeSelect");
+// const viewSavedProjectsButton = document.getElementById("view-saved-projects-button");
+const paletteSizeSelect = document.getElementById("palette-size-select");
 const openSketchButton = document.getElementById("open-sketch")
 
 let originalImage = null;
@@ -22,7 +22,7 @@ let projectId = null;
 let originalFileName = "";
 let estimatedBlockSize = 8;
 let estimatedTolerance = 30;
-const toggleColorChangeMapButton = document.getElementById("toggleColorChangeMapButton");
+const toggleColorChangeMapButton = document.getElementById("toggle-color-change-map-button");
 let isColorChangeMapVisible = false;
 let colorChangePositions = [];
 

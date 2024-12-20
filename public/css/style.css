@@ -301,12 +301,12 @@ body {
 	flex-direction: column;
 	gap: 2rem;
 }
-#editor #open-sketch {
-	/* margin-bottom: 0rem; */
-}
+/* #editor #open-sketch {
+	margin-bottom: 0rem;
+} */
 
 input[type="number"],
-select#paletteSizeSelect {
+select#palette-size-select {
     font-family: inherit;
     font-size: 2rem;
     color: #fff;
@@ -321,13 +321,13 @@ select#paletteSizeSelect {
 }
 
 input[type="number"]:hover,
-select#paletteSizeSelect:hover {
+select#palette-size-select:hover {
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.7),
                 0 0 15px rgba(255, 255, 255, 0.2);
 }
 
 
-select#paletteSizeSelect option {
+select#palette-size-select option {
     background-color: #0e0e2b; /*  dropdown background */
     color: #fff;
 }

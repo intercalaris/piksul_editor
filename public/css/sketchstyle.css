@@ -95,7 +95,7 @@ canvas {
     max-width: 87dvw;
 }
 
-#gridCanvas {
+#grid-canvas {
     pointer-events: none;
     background-color: transparent;
 }
@@ -158,11 +158,11 @@ canvas {
 #undo-reset, #draw-erase {
     display: flex;
 }
-#undoButton, #drawButton {
+#undo-button, #draw-button {
     margin: 4px 2px 4px 8px;
     flex-grow: 1;
 }
-#resetButton, #eraseButton {
+#reset-button, #erase-button {
     margin: 4px 8px 4px 2px;
     flex-grow: 1;
 }
