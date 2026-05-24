@@ -1,4 +1,4 @@
-To view my self-hosted project, navigate to [katan.axolotl-acrux.ts.net](https://katan.axolotl-acrux.ts.net/)
+To view my self-hosted project, navigate to [imapi.axolotl-acrux.ts.net](https://imapi.axolotl-acrux.ts.net/)
 
 # Piksul
 
