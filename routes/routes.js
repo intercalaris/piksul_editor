@@ -3,8 +3,8 @@ const router = express.Router();
 const mainController = require("../controllers/mainController");
 const upload = require("../config/filesConfig");
 
-// Auth is intentionally dormant while Piksul remains a tool-first app.
-// Set ENABLE_AUTH=true and restore auth dependencies when accounts become a product feature.
+// Auth is intentionally dormant. Do not wire it into the current product
+// unless account-based project storage becomes an active feature again.
 if (process.env.ENABLE_AUTH === "true") {
     const userController = require("../controllers/userController");
     router.get("/login", userController.getLogin);
@@ -12,6 +12,10 @@ if (process.env.ENABLE_AUTH === "true") {
     router.get("/logout", userController.logout);
     router.get("/signup", userController.getSignup);
     router.post("/signup", userController.postSignup);
+} else {
+    router.all(["/login", "/signup", "/logout"], (req, res) => {
+        res.status(404).send("Accounts are not active in this version of Piksul.");
+    });
 }
 
 // Navigation and Project Routes
@@ -29,11 +33,5 @@ router.post("/projects",
 router.get("/sketch/:id", mainController.openInSketch);
 
 router.delete("/projects/:id", mainController.deleteProject);
-
-// router.get("/profile", ensureAuth, mainController.getProfile);
-// router.get("/feed", ensureAuth, mainController.getFeed);
-// router.get("/:id", ensureAuth, mainController.getProject);
-// router.post("/createProject", filesConfig.single("file"), mainController.createProject);
-// router.delete("/deleteProject/:id", mainController.deleteProject);
 
 module.exports = router;
