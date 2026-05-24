@@ -1,14 +1,64 @@
-const sqlite3 = require('sqlite3').verbose();
+const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 
-const db = new sqlite3.Database(path.join(__dirname, '../data/database.sqlite'), (err) => {
-  if (err) {
-    console.error('Error opening database:', err);
-    process.exit(1);
-  } else {
-    console.log('Connected to SQLite database.');
-  }
-});
+const database = new DatabaseSync(path.join(__dirname, '../data/database.sqlite'));
+console.log('Connected to SQLite database.');
+
+const normalizeParams = (params) => {
+  if (typeof params === 'function' || params === undefined) return [];
+  return Array.isArray(params) ? params : [params];
+};
+
+const normalizeCallback = (params, callback) => {
+  if (typeof params === 'function') return params;
+  return callback;
+};
+
+const db = {
+  run(sql, params, callback) {
+    const cb = normalizeCallback(params, callback);
+    try {
+      const result = database.prepare(sql).run(...normalizeParams(params));
+      if (cb) {
+        cb.call({
+          changes: result.changes,
+          lastID: Number(result.lastInsertRowid),
+        }, null);
+      }
+    } catch (err) {
+      if (cb) return cb(err);
+      throw err;
+    }
+  },
+
+  get(sql, params, callback) {
+    const cb = normalizeCallback(params, callback);
+    try {
+      const row = database.prepare(sql).get(...normalizeParams(params));
+      if (cb) cb(null, row);
+      return row;
+    } catch (err) {
+      if (cb) return cb(err);
+      throw err;
+    }
+  },
+
+  all(sql, params, callback) {
+    const cb = normalizeCallback(params, callback);
+    try {
+      const rows = database.prepare(sql).all(...normalizeParams(params));
+      if (cb) cb(null, rows);
+      return rows;
+    } catch (err) {
+      if (cb) return cb(err);
+      throw err;
+    }
+  },
+
+  close() {
+    database.close();
+  },
+};
 
 function initDB() {
 

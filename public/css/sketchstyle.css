@@ -34,12 +34,14 @@ header {
     border: 1px solid rgb(52, 52, 52);
     padding: 0.5rem;
 	display: flex;
-    justify-content: space-between;
+    align-items: center;
+    justify-content: flex-start;
     gap: 1rem;
 }
 .navigation {
 	display: flex;
-	gap: 2rem
+    margin-left: auto;
+	gap: 2rem;
 }
 .button.logo-home {
 	padding: 0;
@@ -53,7 +55,7 @@ header img {
 
 }
 header .user-buttons {
-	display: flex;
+	display: none;
     justify-content: flex-end;
     gap: 2rem;
 }

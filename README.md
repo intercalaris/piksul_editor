@@ -11,10 +11,15 @@ The editor page performs automatic calculations, grid-snapping, and allows palet
 
 ## Tech Stack
 
-Piksul is built with a Node/Express.js backend, self-hosted SQLite and image filesystem for data storage, and Passport for user authentication features (in development). Custom algorithms calculate and self-evaluate the pixel block size.
+Piksul is built with a Node/Express.js backend, self-hosted SQLite and image filesystem for data storage, and browser-based canvas tools for image editing. Custom algorithms calculate and self-evaluate the pixel block size.
 
 ## How to Run
 
-Clone the repository and navigate to the project directory. Install dependencies with `npm install`. Run with "npm start" or "node --watch server.js"
+Use Node.js 24 or newer.
 
-Run the server using `node server.js`. Access the application at `http://localhost:8000`. Upload pixel art images for analysis and reconstruction, adjust settings, and save or export the results. To see publicly saved projects, navigate to the Public Projects Gallery!
+```bash
+npm install
+npm start
+```
+
+Access the application at `http://localhost:8000`. Upload pixel art images for analysis and reconstruction, adjust settings, and save or export the results. To see publicly saved projects, navigate to the Public Projects Gallery.

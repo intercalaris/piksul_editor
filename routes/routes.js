@@ -1,16 +1,18 @@
 const express = require("express");
 const router = express.Router();
-const userController = require("../controllers/userController");
 const mainController = require("../controllers/mainController");
-const { ensureAuth, ensureGuest } = require("../config/passportConfig");
 const upload = require("../config/filesConfig");
 
-// User Authentication Routes
-router.get("/login", userController.getLogin);
-router.post("/login", userController.postLogin);
-router.get("/logout", userController.logout);
-router.get("/signup", userController.getSignup);
-router.post("/signup", userController.postSignup);
+// Auth is intentionally dormant while Piksul remains a tool-first app.
+// Set ENABLE_AUTH=true and restore auth dependencies when accounts become a product feature.
+if (process.env.ENABLE_AUTH === "true") {
+    const userController = require("../controllers/userController");
+    router.get("/login", userController.getLogin);
+    router.post("/login", userController.postLogin);
+    router.get("/logout", userController.logout);
+    router.get("/signup", userController.getSignup);
+    router.post("/signup", userController.postSignup);
+}
 
 // Navigation and Project Routes
 router.get("/", mainController.getIndex);
