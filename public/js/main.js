@@ -22,6 +22,7 @@ let projectId = null;
 let originalFileName = "";
 let estimatedBlockSize = 8;
 let estimatedTolerance = 30;
+let lastAutoGrid = null;
 const toggleColorChangeMapButton = document.getElementById("toggle-color-change-map-button");
 let isColorChangeMapVisible = false;
 let colorChangePositions = [];
@@ -386,113 +387,220 @@ function paletteSizeChange() {
     }
 }
 
-// CALCULATIONS
+// CALCULATIONS — F-statistic grid detection
+
+function colMeanLuma(data, width, rowStart, rowEnd, colStart, colEnd) {
+    const rows = rowEnd - rowStart;
+    const profile = new Float64Array(colEnd - colStart);
+    for (let x = colStart; x < colEnd; x++) {
+        let sum = 0;
+        for (let y = rowStart; y < rowEnd; y++) {
+            const i = (y * width + x) * 4;
+            sum += 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+        }
+        profile[x - colStart] = sum / rows;
+    }
+    return profile;
+}
+
+function rowMeanLuma(data, width, rowStart, rowEnd, colStart, colEnd) {
+    const cols = colEnd - colStart;
+    const profile = new Float64Array(rowEnd - rowStart);
+    for (let y = rowStart; y < rowEnd; y++) {
+        let sum = 0;
+        for (let x = colStart; x < colEnd; x++) {
+            const i = (y * width + x) * 4;
+            sum += 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+        }
+        profile[y - rowStart] = sum / cols;
+    }
+    return profile;
+}
+
+function rowLumaVariance(data, width, y, colStart, colEnd) {
+    const n = colEnd - colStart;
+    let s = 0, s2 = 0;
+    for (let x = colStart; x < colEnd; x++) {
+        const i = (y * width + x) * 4;
+        const v = 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+        s += v; s2 += v*v;
+    }
+    return s2/n - (s/n)**2;
+}
+
+function colLumaVariance(data, width, x, rowStart, rowEnd) {
+    const n = rowEnd - rowStart;
+    let s = 0, s2 = 0;
+    for (let y = rowStart; y < rowEnd; y++) {
+        const i = (y * width + x) * 4;
+        const v = 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
+        s += v; s2 += v*v;
+    }
+    return s2/n - (s/n)**2;
+}
+
+function trimBlanks({ data, width, height }) {
+    const THRESH = 10;
+    let rowStart = 0, rowEnd = height;
+    for (let y = 0; y < height; y++) {
+        if (rowLumaVariance(data, width, y, 0, width) >= THRESH) { rowStart = y; break; }
+    }
+    for (let y = height-1; y >= rowStart; y--) {
+        if (rowLumaVariance(data, width, y, 0, width) >= THRESH) { rowEnd = y+1; break; }
+    }
+    let colStart = 0, colEnd = width;
+    for (let x = 0; x < width; x++) {
+        if (colLumaVariance(data, width, x, rowStart, rowEnd) >= THRESH) { colStart = x; break; }
+    }
+    for (let x = width-1; x >= colStart; x--) {
+        if (colLumaVariance(data, width, x, rowStart, rowEnd) >= THRESH) { colEnd = x+1; break; }
+    }
+    return { rowStart, rowEnd, colStart, colEnd };
+}
+
+function findBestN(profile) {
+    const span = profile.length;
+    const minN = Math.max(2, Math.floor(span / 50));
+    const maxN = Math.floor(span / 4);
+    const ps = new Float64Array(span + 1);
+    const ps2 = new Float64Array(span + 1);
+    for (let i = 0; i < span; i++) {
+        ps[i+1] = ps[i] + profile[i];
+        ps2[i+1] = ps2[i] + profile[i]*profile[i];
+    }
+    const rSum  = (a, b) => ps[b]  - ps[a];
+    const rSum2 = (a, b) => ps2[b] - ps2[a];
+    function computeF(N, xo) {
+        const end = Math.min(xo + span, span);
+        if (end - xo < N) return -1;
+        const total = end - xo;
+        const gm = rSum(xo, end) / total;
+        let bss = 0, wss = 0;
+        for (let k = 0; k < N; k++) {
+            const a = xo + Math.floor(k * span / N);
+            const b = Math.min(xo + Math.floor((k+1) * span / N), span);
+            if (b <= a) continue;
+            const bm = rSum(a, b) / (b-a);
+            bss += (bm - gm)**2 * (b-a);
+            wss += rSum2(a, b) - bm*bm*(b-a);
+        }
+        const dfB = N-1, dfW = total-N;
+        return (dfW <= 0 || wss <= 0) ? -1 : (bss/dfB) / (wss/dfW);
+    }
+    const fScores = new Float64Array(maxN + 1);
+    for (let N = minN; N <= maxN; N++) {
+        let best = -1;
+        for (let xo = 0; xo < Math.ceil(span / N); xo++) {
+            const f = computeF(N, xo);
+            if (f > best) best = f;
+        }
+        fScores[N] = best;
+    }
+    let bestN = minN, bestF = -Infinity;
+    for (let N = minN + 1; N < maxN; N++) {
+        if (fScores[N] > fScores[N-1] && fScores[N] > fScores[N+1] && fScores[N] > bestF) {
+            bestF = fScores[N]; bestN = N;
+        }
+    }
+    if (bestF === -Infinity) {
+        for (let N = minN; N <= maxN; N++) {
+            if (fScores[N] > bestF) { bestF = fScores[N]; bestN = N; }
+        }
+    }
+    let bestXo = 0, bestOffF = computeF(bestN, 0);
+    for (let xo = 1; xo < Math.ceil(span / bestN); xo++) {
+        const f = computeF(bestN, xo);
+        if (f > bestOffF) { bestOffF = f; bestXo = xo; }
+    }
+    if (bestXo !== 0 && computeF(bestN, 0) * 1.05 >= bestOffF) bestXo = 0;
+    return { N: bestN, xo: bestXo, F: fScores[bestN] };
+}
+
+function findBestOffsetForN(profile, N) {
+    const span = profile.length;
+    const ps = new Float64Array(span + 1);
+    const ps2 = new Float64Array(span + 1);
+    for (let i = 0; i < span; i++) {
+        ps[i+1] = ps[i] + profile[i];
+        ps2[i+1] = ps2[i] + profile[i]*profile[i];
+    }
+    const rSum  = (a, b) => ps[b]  - ps[a];
+    const rSum2 = (a, b) => ps2[b] - ps2[a];
+    function computeF(xo) {
+        const end = Math.min(xo + span, span);
+        if (end - xo < N) return -1;
+        const total = end - xo;
+        const gm = rSum(xo, end) / total;
+        let bss = 0, wss = 0;
+        for (let k = 0; k < N; k++) {
+            const a = xo + Math.floor(k * span / N);
+            const b = Math.min(xo + Math.floor((k+1) * span / N), span);
+            if (b <= a) continue;
+            const bm = rSum(a, b) / (b-a);
+            bss += (bm - gm)**2 * (b-a);
+            wss += rSum2(a, b) - bm*bm*(b-a);
+        }
+        const dfB = N-1, dfW = total-N;
+        return (dfW <= 0 || wss <= 0) ? -1 : (bss/dfB) / (wss/dfW);
+    }
+    let bestXo = 0, bestF = computeF(0);
+    for (let xo = 1; xo < Math.ceil(span / N); xo++) {
+        const f = computeF(xo);
+        if (f > bestF) { bestF = f; bestXo = xo; }
+    }
+    if (bestXo !== 0 && computeF(0) * 1.05 >= bestF) bestXo = 0;
+    return { xo: bestXo };
+}
+
+function estimateGrid(imageData) {
+    const { data, width, height } = imageData;
+    const { rowStart, rowEnd, colStart, colEnd } = trimBlanks(imageData);
+    const spanX = colEnd - colStart, spanY = rowEnd - rowStart;
+    const colProfile = colMeanLuma(data, width, rowStart, rowEnd, colStart, colEnd);
+    const rowProfile = rowMeanLuma(data, width, rowStart, rowEnd, colStart, colEnd);
+    const xR = findBestN(colProfile);
+    const yR = findBestN(rowProfile);
+    let N_x = xR.N, xo = xR.xo + colStart;
+    let N_y = yR.N, yo = yR.xo + rowStart;
+    const bsX = spanX / N_x, bsY = spanY / N_y;
+    if (Math.abs(bsX - bsY) / Math.max(bsX, bsY) > 0.15) {
+        if (xR.F >= yR.F) {
+            N_y = Math.max(1, Math.round(spanY / bsX));
+            yo = findBestOffsetForN(rowProfile, N_y).xo + rowStart;
+        } else {
+            N_x = Math.max(1, Math.round(spanX / bsY));
+            xo = findBestOffsetForN(colProfile, N_x).xo + colStart;
+        }
+    }
+    const approxBlockSize = (spanX / N_x + spanY / N_y) / 2;
+    console.log(`estimateGrid: N_x=${N_x} N_y=${N_y} approx=${approxBlockSize.toFixed(2)} offset=(${xo},${yo}) span=${spanX}×${spanY}`);
+    return { N_x, xo, N_y, yo, spanX, spanY, approxBlockSize };
+}
+
+function estimateGridManual(imageData, blockSizeHint) {
+    const { data, width, height } = imageData;
+    const { rowStart, rowEnd, colStart, colEnd } = trimBlanks(imageData);
+    const spanX = colEnd - colStart, spanY = rowEnd - rowStart;
+    const N_x = Math.max(1, Math.round(spanX / blockSizeHint));
+    const N_y = Math.max(1, Math.round(spanY / blockSizeHint));
+    const colProfile = colMeanLuma(data, width, rowStart, rowEnd, colStart, colEnd);
+    const rowProfile = rowMeanLuma(data, width, rowStart, rowEnd, colStart, colEnd);
+    const xo = findBestOffsetForN(colProfile, N_x).xo + colStart;
+    const yo = findBestOffsetForN(rowProfile, N_y).xo + rowStart;
+    const approxBlockSize = (spanX / N_x + spanY / N_y) / 2;
+    console.log(`estimateGridManual(hint=${blockSizeHint}): N_x=${N_x} N_y=${N_y} approx=${approxBlockSize.toFixed(2)} offset=(${xo},${yo})`);
+    return { N_x, xo, N_y, yo, spanX, spanY, approxBlockSize };
+}
+
 function estimateBlockSize(img) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     canvas.width = img.width;
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
-    const { data, width, height } = ctx.getImageData(0, 0, img.width, img.height);
-
-    // Gradient-profile autocorrelation for initial period estimate
-    function getLuma(x, y) {
-        const i = (y * width + x) * 4;
-        return data[i+3] === 0 ? 255 : 0.299*data[i] + 0.587*data[i+1] + 0.114*data[i+2];
-    }
-    const colGrad = new Float64Array(width);
-    const rowGrad = new Float64Array(height);
-    for (let y = 0; y < height; y++)
-        for (let x = 1; x < width-1; x++)
-            colGrad[x] += Math.abs(getLuma(x+1,y) - getLuma(x-1,y));
-    for (let x = 0; x < width; x++)
-        for (let y = 1; y < height-1; y++)
-            rowGrad[y] += Math.abs(getLuma(x,y+1) - getLuma(x,y-1));
-
-    function smooth5(arr) {
-        const out = new Float64Array(arr.length);
-        const w = [0.5, 1, 2, 1, 0.5];
-        for (let i = 0; i < arr.length; i++) {
-            let v = 0;
-            for (let k = -2; k <= 2; k++) v += w[k+2] * arr[Math.max(0, Math.min(arr.length-1, i+k))];
-            out[i] = v / 5;
-        }
-        return out;
-    }
-    function autocorrPeak(profile, minLag, maxLag) {
-        const n = profile.length;
-        const mean = profile.reduce((a, b) => a+b, 0) / n;
-        const centered = profile.map(v => v - mean);
-        const denom = centered.reduce((a, v) => a+v*v, 0);
-        if (denom === 0) return minLag;
-        let bestLag = minLag, bestCorr = -Infinity;
-        for (let lag = minLag; lag <= maxLag; lag++) {
-            let num = 0;
-            for (let i = lag; i < n; i++) num += centered[i] * centered[i-lag];
-            const corr = num / denom;
-            if (corr > bestCorr) { bestCorr = corr; bestLag = lag; }
-        }
-        return bestLag;
-    }
-    const xPeriod = autocorrPeak(smooth5(colGrad), 4, Math.min(256, Math.floor(width/3)));
-    const yPeriod = autocorrPeak(smooth5(rowGrad), 4, Math.min(256, Math.floor(height/3)));
-    const initEstimate = Math.min(xPeriod, yPeriod);
-    console.log(`BlockSize autocorr: x=${xPeriod}, y=${yPeriod} → estimate=${initEstimate} (min)`);
-
-    // 2D prefix sums (shared across all candidate block sizes)
-    const stride = width + 1, psLen = stride * (height + 1);
-    const sR=new Float64Array(psLen), sG=new Float64Array(psLen), sB=new Float64Array(psLen);
-    const sR2=new Float64Array(psLen), sG2=new Float64Array(psLen), sB2=new Float64Array(psLen);
-    for (let y = 1; y <= height; y++) {
-        for (let x = 1; x <= width; x++) {
-            const pi=((y-1)*width+(x-1))*4, r=data[pi], g=data[pi+1], b=data[pi+2];
-            const i=y*stride+x, t=(y-1)*stride+x, l=y*stride+(x-1), tl=(y-1)*stride+(x-1);
-            sR[i]=r+sR[t]+sR[l]-sR[tl]; sG[i]=g+sG[t]+sG[l]-sG[tl]; sB[i]=b+sB[t]+sB[l]-sB[tl];
-            sR2[i]=r*r+sR2[t]+sR2[l]-sR2[tl]; sG2[i]=g*g+sG2[t]+sG2[l]-sG2[tl]; sB2[i]=b*b+sB2[t]+sB2[l]-sB2[tl];
-        }
-    }
-    function q(s, x1, y1, x2, y2) { return s[y2*stride+x2]-s[y2*stride+x1]-s[y1*stride+x2]+s[y1*stride+x1]; }
-    // Character-only variance: skip near-white background blocks (mean luma > 210)
-    const BG_THRESH = 210;
-    function rawScore(bs, xo, yo) {
-        const nbX=Math.floor((width-xo)/bs), nbY=Math.floor((height-yo)/bs), n=bs*bs;
-        let total=0, count=0;
-        for (let by=0;by<nbY;by++) for (let bx=0;bx<nbX;bx++) {
-            const x1=xo+bx*bs, y1=yo+by*bs, x2=x1+bs, y2=y1+bs;
-            const mr=q(sR,x1,y1,x2,y2)/n, mg=q(sG,x1,y1,x2,y2)/n, mb=q(sB,x1,y1,x2,y2)/n;
-            if (0.299*mr+0.587*mg+0.114*mb > BG_THRESH) continue;
-            total+=q(sR2,x1,y1,x2,y2)/n-mr*mr+q(sG2,x1,y1,x2,y2)/n-mg*mg+q(sB2,x1,y1,x2,y2)/n-mb*mb;
-            count++;
-        }
-        return { total, nbX, nbY, count };
-    }
-    function bestScoreForBS(bs) {
-        const s00 = rawScore(bs, 0, 0).total;
-        let best=s00, bxo=0, byo=0;
-        for (let yo=0;yo<bs;yo++) for (let xo=0;xo<bs;xo++) {
-            if (xo===0&&yo===0) continue;
-            const s=rawScore(bs,xo,yo).total;
-            if (s<best) { best=s; bxo=xo; byo=yo; }
-        }
-        const useOff = best < s00*0.95;
-        const {count} = rawScore(bs, useOff?bxo:0, useOff?byo:0);
-        return { score: useOff?best:s00, pixelCount: count*bs*bs };
-    }
-
-    // Rank candidates by character-only per-pixel variance (no divisibility bonus)
-    const candidates = new Set();
-    for (let b=Math.max(4,initEstimate-3); b<=initEstimate+3; b++) candidates.add(b);
-    for (let b=Math.max(4,initEstimate-6); b<=initEstimate+6; b++) {
-        if (width%b===0 || height%b===0) candidates.add(b);
-    }
-    let bestB=initEstimate, bestPerPx=Infinity;
-    for (const b of candidates) {
-        const {score, pixelCount} = bestScoreForBS(b);
-        const perPx = pixelCount>0 ? score/pixelCount : Infinity;
-        if (perPx<bestPerPx) { bestPerPx=perPx; bestB=b; }
-    }
-    console.log(`BlockSize selected: ${bestB}`);
-    return bestB;
+    const imageData = ctx.getImageData(0, 0, img.width, img.height);
+    lastAutoGrid = estimateGrid(imageData);
+    return Math.round(lastAutoGrid.approxBlockSize);
 }
 
 function colorsAreDifferent(color1, color2, tolerance) {
@@ -504,79 +612,6 @@ function colorsAreDifferent(color1, color2, tolerance) {
 }
 
 let snappedImageURL = null;
-
-function estimateGridOffset(imageData, blockSize) {
-    const { data, width, height } = imageData;
-    const stride = width + 1;
-    const psLen = stride * (height + 1);
-
-    // 2D prefix sums for R, G, B and their squares (for variance = E[X²] - E[X]²)
-    const sR  = new Float64Array(psLen);
-    const sG  = new Float64Array(psLen);
-    const sB  = new Float64Array(psLen);
-    const sR2 = new Float64Array(psLen);
-    const sG2 = new Float64Array(psLen);
-    const sB2 = new Float64Array(psLen);
-
-    for (let y = 1; y <= height; y++) {
-        for (let x = 1; x <= width; x++) {
-            const pi = ((y - 1) * width + (x - 1)) * 4;
-            const r = data[pi], g = data[pi + 1], b = data[pi + 2];
-            const i  = y * stride + x;
-            const t  = (y - 1) * stride + x;
-            const l  = y * stride + (x - 1);
-            const tl = (y - 1) * stride + (x - 1);
-            sR[i]  = r   + sR[t]  + sR[l]  - sR[tl];
-            sG[i]  = g   + sG[t]  + sG[l]  - sG[tl];
-            sB[i]  = b   + sB[t]  + sB[l]  - sB[tl];
-            sR2[i] = r*r + sR2[t] + sR2[l] - sR2[tl];
-            sG2[i] = g*g + sG2[t] + sG2[l] - sG2[tl];
-            sB2[i] = b*b + sB2[t] + sB2[l] - sB2[tl];
-        }
-    }
-
-    function q(s, x1, y1, x2, y2) {
-        return s[y2*stride+x2] - s[y2*stride+x1] - s[y1*stride+x2] + s[y1*stride+x1];
-    }
-
-    function scoreOffset(xo, yo) {
-        const nbX = Math.floor((width  - xo) / blockSize);
-        const nbY = Math.floor((height - yo) / blockSize);
-        const n   = blockSize * blockSize;
-        let total = 0;
-        for (let by = 0; by < nbY; by++) {
-            for (let bx = 0; bx < nbX; bx++) {
-                const x1 = xo + bx * blockSize, y1 = yo + by * blockSize;
-                const x2 = x1 + blockSize,      y2 = y1 + blockSize;
-                const mr = q(sR,  x1, y1, x2, y2) / n;
-                const mg = q(sG,  x1, y1, x2, y2) / n;
-                const mb = q(sB,  x1, y1, x2, y2) / n;
-                total += q(sR2, x1, y1, x2, y2) / n - mr * mr;
-                total += q(sG2, x1, y1, x2, y2) / n - mg * mg;
-                total += q(sB2, x1, y1, x2, y2) / n - mb * mb;
-            }
-        }
-        return total;
-    }
-
-    const scoreAt00 = scoreOffset(0, 0);
-    let bestScore = scoreAt00, bestXO = 0, bestYO = 0;
-
-    for (let yo = 0; yo < blockSize; yo++) {
-        for (let xo = 0; xo < blockSize; xo++) {
-            if (xo === 0 && yo === 0) continue;
-            const score = scoreOffset(xo, yo);
-            if (score < bestScore) { bestScore = score; bestXO = xo; bestYO = yo; }
-        }
-    }
-
-    const MARGIN = 0.05;
-    const useOffset = bestScore < scoreAt00 * (1 - MARGIN);
-    const xOffset = useOffset ? bestXO : 0;
-    const yOffset = useOffset ? bestYO : 0;
-    console.log(`Grid offset: best=(${bestXO},${bestYO}) score=${bestScore.toFixed(0)}, (0,0) score=${scoreAt00.toFixed(0)} → using (${xOffset},${yOffset})`);
-    return { xOffset, yOffset };
-}
 
 async function snapToGrid(blockSize) {
     const img = new Image();
@@ -599,32 +634,34 @@ async function snapToGrid(blockSize) {
     const srcWidth = img.width;
     const srcHeight = img.height;
 
-    const { xOffset, yOffset } = estimateGridOffset(imageData, blockSize);
+    const grid = (lastAutoGrid && Math.abs(blockSize - lastAutoGrid.approxBlockSize) < 0.5)
+        ? lastAutoGrid
+        : estimateGridManual(imageData, blockSize);
+    const { N_x, xo, N_y, yo, spanX, spanY } = grid;
 
-    const numBlocksX = Math.floor((srcWidth  - xOffset) / blockSize);
-    const numBlocksY = Math.floor((srcHeight - yOffset) / blockSize);
-    const cleanWidth  = numBlocksX * blockSize;
-    const cleanHeight = numBlocksY * blockSize;
-
-    console.log(`Snapping: blockSize=${blockSize}, offset=(${xOffset},${yOffset}), output=${cleanWidth}x${cleanHeight}`);
+    console.log(`Snapping: N_x=${N_x} N_y=${N_y} approx=${grid.approxBlockSize.toFixed(2)} offset=(${xo},${yo}) span=${spanX}×${spanY}`);
 
     const canvas = document.createElement("canvas");
-    canvas.width = cleanWidth;
-    canvas.height = cleanHeight;
+    canvas.width = spanX;
+    canvas.height = spanY;
     const ctx = canvas.getContext("2d");
-    const outImageData = ctx.createImageData(cleanWidth, cleanHeight);
+    const outImageData = ctx.createImageData(spanX, spanY);
     const outData = outImageData.data;
 
-    for (let blockY = 0; blockY < numBlocksY; blockY++) {
-        for (let blockX = 0; blockX < numBlocksX; blockX++) {
-            const srcX = xOffset + blockX * blockSize;
-            const srcY = yOffset + blockY * blockSize;
-            // Mode color: most frequent exact RGBA across all pixels in the block
+    for (let by = 0; by < N_y; by++) {
+        const sy1 = yo + Math.floor(by * spanY / N_y);
+        const sy2 = yo + Math.floor((by+1) * spanY / N_y);
+        const dy1 = Math.floor(by * spanY / N_y);
+        const dy2 = Math.floor((by+1) * spanY / N_y);
+        for (let bx = 0; bx < N_x; bx++) {
+            const sx1 = xo + Math.floor(bx * spanX / N_x);
+            const sx2 = xo + Math.floor((bx+1) * spanX / N_x);
+            const dx1 = Math.floor(bx * spanX / N_x);
+            const dx2 = Math.floor((bx+1) * spanX / N_x);
             const colorCounts = new Map();
-            for (let oy = 0; oy < blockSize; oy++) {
-                for (let ox = 0; ox < blockSize; ox++) {
-                    const px = Math.min(srcX+ox, srcWidth-1), py = Math.min(srcY+oy, srcHeight-1);
-                    const si = (py*srcWidth+px)*4;
+            for (let py = sy1; py < sy2; py++) {
+                for (let px = sx1; px < sx2; px++) {
+                    const si = (Math.min(py, srcHeight-1) * srcWidth + Math.min(px, srcWidth-1)) * 4;
                     const key = `${data[si]},${data[si+1]},${data[si+2]},${data[si+3]}`;
                     colorCounts.set(key, (colorCounts.get(key)||0)+1);
                 }
@@ -634,12 +671,9 @@ async function snapToGrid(blockSize) {
                 if (count > modeCount) { modeCount = count; modeKey = key; }
             }
             const [r, g, b, a] = (modeKey||'0,0,0,255').split(',').map(Number);
-
-            const dstX = blockX * blockSize;
-            const dstY = blockY * blockSize;
-            for (let oy = 0; oy < blockSize; oy++) {
-                for (let ox = 0; ox < blockSize; ox++) {
-                    const dstIdx = ((dstY + oy) * cleanWidth + (dstX + ox)) * 4;
+            for (let oy = dy1; oy < dy2; oy++) {
+                for (let ox = dx1; ox < dx2; ox++) {
+                    const dstIdx = (oy * spanX + ox) * 4;
                     outData[dstIdx]     = r;
                     outData[dstIdx + 1] = g;
                     outData[dstIdx + 2] = b;
@@ -654,17 +688,15 @@ async function snapToGrid(blockSize) {
     editedImageURL = snappedImageURL;
     editedBlob = await fetch(editedImageURL).then((res) => res.blob());
 
-    // Crop the original to the same region so the comparison slider aligns flush.
-    // originalImageURL is kept intact for save/upload; only the overlay is updated.
     const croppedOrigCanvas = document.createElement("canvas");
-    croppedOrigCanvas.width  = cleanWidth;
-    croppedOrigCanvas.height = cleanHeight;
+    croppedOrigCanvas.width  = spanX;
+    croppedOrigCanvas.height = spanY;
     croppedOrigCanvas.getContext("2d").drawImage(
-        srcCanvas, xOffset, yOffset, cleanWidth, cleanHeight, 0, 0, cleanWidth, cleanHeight
+        srcCanvas, xo, yo, spanX, spanY, 0, 0, spanX, spanY
     );
     document.querySelector("#comparison figure").style.backgroundImage =
         `url(${croppedOrigCanvas.toDataURL("image/png")})`;
-    comparison.style.aspectRatio = `${cleanWidth / cleanHeight}`;
+    comparison.style.aspectRatio = `${spanX / spanY}`;
 
     setupSnappedImage(editedImageURL);
     localStorage.setItem("editedImage", editedImageURL);
