@@ -93,8 +93,7 @@ canvas {
     grid-area: 1 / 1;
     border: 1px solid #444;
     background-color: #121212;
-    max-height: 82dvh;
-    max-width: 87dvw;
+    image-rendering: pixelated;
 }
 
 #grid-canvas {

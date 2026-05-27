@@ -642,22 +642,18 @@ async function snapToGrid(blockSize) {
     console.log(`Snapping: N_x=${N_x} N_y=${N_y} approx=${grid.approxBlockSize.toFixed(2)} offset=(${xo},${yo}) span=${spanX}×${spanY}`);
 
     const canvas = document.createElement("canvas");
-    canvas.width = spanX;
-    canvas.height = spanY;
+    canvas.width = N_x;
+    canvas.height = N_y;
     const ctx = canvas.getContext("2d");
-    const outImageData = ctx.createImageData(spanX, spanY);
+    const outImageData = ctx.createImageData(N_x, N_y);
     const outData = outImageData.data;
 
     for (let by = 0; by < N_y; by++) {
         const sy1 = yo + Math.floor(by * spanY / N_y);
         const sy2 = yo + Math.floor((by+1) * spanY / N_y);
-        const dy1 = Math.floor(by * spanY / N_y);
-        const dy2 = Math.floor((by+1) * spanY / N_y);
         for (let bx = 0; bx < N_x; bx++) {
             const sx1 = xo + Math.floor(bx * spanX / N_x);
             const sx2 = xo + Math.floor((bx+1) * spanX / N_x);
-            const dx1 = Math.floor(bx * spanX / N_x);
-            const dx2 = Math.floor((bx+1) * spanX / N_x);
             const colorCounts = new Map();
             for (let py = sy1; py < sy2; py++) {
                 for (let px = sx1; px < sx2; px++) {
@@ -671,15 +667,11 @@ async function snapToGrid(blockSize) {
                 if (count > modeCount) { modeCount = count; modeKey = key; }
             }
             const [r, g, b, a] = (modeKey||'0,0,0,255').split(',').map(Number);
-            for (let oy = dy1; oy < dy2; oy++) {
-                for (let ox = dx1; ox < dx2; ox++) {
-                    const dstIdx = (oy * spanX + ox) * 4;
-                    outData[dstIdx]     = r;
-                    outData[dstIdx + 1] = g;
-                    outData[dstIdx + 2] = b;
-                    outData[dstIdx + 3] = a;
-                }
-            }
+            const dstIdx = (by * N_x + bx) * 4;
+            outData[dstIdx]     = r;
+            outData[dstIdx + 1] = g;
+            outData[dstIdx + 2] = b;
+            outData[dstIdx + 3] = a;
         }
     }
 

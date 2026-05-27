@@ -24,21 +24,29 @@ let currentColor = colorPicker.value;
 let originalImage;
 let undoStack = [];
 
+function fitCanvasToViewport() {
+    const maxW = window.innerWidth * 0.87;
+    const maxH = window.innerHeight * 0.82;
+    const scale = Math.min(maxW / imageCanvas.width, maxH / imageCanvas.height);
+    const cssW = Math.round(imageCanvas.width * scale);
+    const cssH = Math.round(imageCanvas.height * scale);
+    imageCanvas.style.width = cssW + 'px';
+    imageCanvas.style.height = cssH + 'px';
+    gridCanvas.style.width = cssW + 'px';
+    gridCanvas.style.height = cssH + 'px';
+}
+
+window.addEventListener('resize', () => {
+    if (originalImage) fitCanvasToViewport();
+});
+
 const loadEditedImage = async () => {
     let img = new Image();
     let imageUrl;
     if (localStorage.getItem("editedImage")) {
         imageUrl = localStorage.getItem("editedImage");
+        blockSize = 1;
         console.log("Loading image from localStorage.");
-        const storedBlockSize = parseInt(localStorage.getItem("blockSize"), 10);
-        if (storedBlockSize && !isNaN(storedBlockSize)) {
-            blockSize = storedBlockSize;
-        } else {
-            console.warn(
-                "Block size not found in localStorage, using default."
-            );
-            blockSize = 16;
-        }
     } else {
         console.error("No image source");
         return;
@@ -51,7 +59,7 @@ const loadEditedImage = async () => {
             gridCanvas.width = imageCanvas.width;
             gridCanvas.height = imageCanvas.height;
             imageCtx.drawImage(img, 0, 0);
-            drawGrid();
+            fitCanvasToViewport();
             originalImage = img;
             saveStateForUndo();
             extractTopColors();
@@ -66,27 +74,7 @@ const loadEditedImage = async () => {
 };
 
 const drawGrid = () => {
-    // clear previous grid
     gridCtx.clearRect(0, 0, gridCanvas.width, gridCanvas.height);
-    gridCtx.save();
-    gridCtx.strokeStyle = "rgba(255, 255, 255, 0.3)";
-    gridCtx.lineWidth = 1;
-
-    for (let x = 0; x < gridCanvas.width; x += blockSize) {
-        gridCtx.beginPath();
-        gridCtx.moveTo(x, 0);
-        gridCtx.lineTo(x, gridCanvas.height);
-        gridCtx.stroke();
-    }
-
-    for (let y = 0; y < gridCanvas.height; y += blockSize) {
-        gridCtx.beginPath();
-        gridCtx.moveTo(0, y);
-        gridCtx.lineTo(gridCanvas.width, y);
-        gridCtx.stroke();
-    }
-
-    gridCtx.restore();
 };
 
 const snapToGrid = (x, y) => {

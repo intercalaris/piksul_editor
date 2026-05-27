@@ -365,6 +365,7 @@ select#palette-size-select option {
     position: absolute;
     top: 0;
     left: 0;
+    image-rendering: pixelated;
 }
 
 input[type="range"] {
