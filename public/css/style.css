@@ -342,6 +342,7 @@ select#palette-size-select option {
     overflow: hidden;
     position: relative;
     aspect-ratio: 16/9;
+    align-self: flex-start;
 }
 
 #comparison figure {
