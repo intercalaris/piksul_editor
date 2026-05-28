@@ -268,6 +268,19 @@ saveProjectButton?.addEventListener("click", async () => {
 
 blockSizeInput?.addEventListener("input", blockSizeChange);
 
+document.querySelector(".spin-up")?.addEventListener("click", () => {
+    const max = parseInt(blockSizeInput.max, 10);
+    const val = parseInt(blockSizeInput.value, 10) || 4;
+    blockSizeInput.value = Math.min(val + 1, max);
+    blockSizeInput.dispatchEvent(new Event("input"));
+});
+document.querySelector(".spin-down")?.addEventListener("click", () => {
+    const min = parseInt(blockSizeInput.min, 10);
+    const val = parseInt(blockSizeInput.value, 10) || 4;
+    blockSizeInput.value = Math.max(val - 1, min);
+    blockSizeInput.dispatchEvent(new Event("input"));
+});
+
 
 async function blockSizeChange() {
     const userBlockSize = parseInt(blockSizeInput.value, 10) || estimatedBlockSize;
@@ -612,7 +625,6 @@ function colorsAreDifferent(color1, color2, tolerance) {
 }
 
 let snappedImageURL = null;
-let quantizeAbortController = null;
 
 async function snapToGrid(blockSize) {
     const img = new Image();
@@ -656,25 +668,23 @@ async function snapToGrid(blockSize) {
             const sx1 = xo + Math.floor(bx * spanX / N_x);
             const sx2 = xo + Math.floor((bx+1) * spanX / N_x);
             const rs = [], gs = [], bs = [], as = [];
-            for (let py = sy1; py < sy2; py++) {
-                for (let px = sx1; px < sx2; px++) {
+            const iy1 = sy2 - sy1 > 4 ? sy1 + 2 : sy1;
+            const iy2 = sy2 - sy1 > 4 ? sy2 - 2 : sy2;
+            const ix1 = sx2 - sx1 > 4 ? sx1 + 2 : sx1;
+            const ix2 = sx2 - sx1 > 4 ? sx2 - 2 : sx2;
+            for (let py = iy1; py < iy2; py++) {
+                for (let px = ix1; px < ix2; px++) {
                     const si = (Math.min(py, srcHeight-1) * srcWidth + Math.min(px, srcWidth-1)) * 4;
-                    rs.push(data[si]);
-                    gs.push(data[si+1]);
-                    bs.push(data[si+2]);
-                    as.push(data[si+3]);
+                    rs.push(data[si]); gs.push(data[si+1]); bs.push(data[si+2]); as.push(data[si+3]);
                 }
             }
-            rs.sort((a, b) => a - b);
-            gs.sort((a, b) => a - b);
-            bs.sort((a, b) => a - b);
-            as.sort((a, b) => a - b);
+            rs.sort((a,b)=>a-b); gs.sort((a,b)=>a-b); bs.sort((a,b)=>a-b); as.sort((a,b)=>a-b);
             const mid = (rs.length - 1) / 2;
             const lo = Math.floor(mid), hi = Math.ceil(mid);
-            const r = Math.round((rs[lo] + rs[hi]) / 2);
-            const g = Math.round((gs[lo] + gs[hi]) / 2);
-            const b = Math.round((bs[lo] + bs[hi]) / 2);
-            const a = Math.round((as[lo] + as[hi]) / 2);
+            const r = Math.round((rs[lo]+rs[hi])/2);
+            const g = Math.round((gs[lo]+gs[hi])/2);
+            const b = Math.round((bs[lo]+bs[hi])/2);
+            const a = Math.round((as[lo]+as[hi])/2);
             const dstIdx = (by * N_x + bx) * 4;
             outData[dstIdx]     = r;
             outData[dstIdx + 1] = g;
@@ -691,7 +701,9 @@ async function snapToGrid(blockSize) {
     const croppedOrigCanvas = document.createElement("canvas");
     croppedOrigCanvas.width  = spanX;
     croppedOrigCanvas.height = spanY;
-    croppedOrigCanvas.getContext("2d").drawImage(srcCanvas, xo, yo, spanX, spanY, 0, 0, spanX, spanY);
+    croppedOrigCanvas.getContext("2d").drawImage(
+        srcCanvas, xo, yo, spanX, spanY, 0, 0, spanX, spanY
+    );
     document.querySelector("#comparison figure").style.backgroundImage =
         `url(${croppedOrigCanvas.toDataURL("image/png")})`;
     comparison.style.aspectRatio = `${spanX / spanY}`;
@@ -701,38 +713,85 @@ async function snapToGrid(blockSize) {
     console.log(`LocalStorage updated with edited image after snapping`);
 }
 
-async function applyQuantizationToImage(paletteSize) {
+function applyQuantizationToImage(paletteSize) {
     if (!snappedImageURL) {
-        console.error("Snapped image not available. Please snap the image to the grid first.");
+        console.error(
+            "Snapped image not available. Please snap the image to the grid first."
+        );
         return;
     }
-    if (quantizeAbortController) quantizeAbortController.abort();
-    quantizeAbortController = new AbortController();
-    const signal = quantizeAbortController.signal;
-    try {
-        const blob = await fetch(snappedImageURL).then(r => r.blob());
-        const formData = new FormData();
-        formData.append("image", blob, "snapped.png");
-        formData.append("colors", paletteSize);
-
-        const response = await fetch("/quantize", { method: "POST", body: formData, signal });
-        if (!response.ok) throw new Error(`Quantize endpoint returned ${response.status}`);
-
-        const resultBlob = await response.blob();
-        const bitmap = await createImageBitmap(resultBlob);
+    const img = new Image();
+    img.src = snappedImageURL; // use unchangd snapped image
+    img.onload = async () => {
         const canvas = document.createElement("canvas");
-        canvas.width = bitmap.width;
-        canvas.height = bitmap.height;
-        canvas.getContext("2d").drawImage(bitmap, 0, 0);
+        const ctx = canvas.getContext("2d");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-        editedImageURL = canvas.toDataURL("image/png");
-        editedBlob = resultBlob;
-        setupSnappedImage(editedImageURL);
-        localStorage.setItem("editedImage", editedImageURL);
-        console.log("Quantization complete via server");
-    } catch (err) {
-        if (err.name === "AbortError") return;
-        console.error("Error during quantization:", err);
-    }
+        try {
+            // Extract unique opaque colors from the snapped image
+            const colorCount = new Map(); // rgb24 -> count
+            const data = imageData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i + 3] === 0) continue;
+                const key = (data[i] << 16) | (data[i + 1] << 8) | data[i + 2];
+                colorCount.set(key, (colorCount.get(key) || 0) + 1);
+            }
+
+            let palette; // [[r,g,b], ...]
+
+            if (colorCount.size <= paletteSize) {
+                // All unique block colors fit — no reduction needed
+                palette = Array.from(colorCount.keys()).map(k => [k >> 16, (k >> 8) & 0xff, k & 0xff]);
+            } else {
+                // More unique colors than palette slots — use RgbQuant method:1 (global histogram)
+                const rgbQuant = new RgbQuant({ colors: paletteSize, method: 1, minHueCols: 2 });
+                rgbQuant.sample(imageData);
+                const pal = rgbQuant.palette(true);
+                palette = pal;
+            }
+
+            if (!palette || palette.length === 0) {
+                console.error("Failed to generate a palette.");
+                return;
+            }
+
+            // Map each pixel to the nearest palette color
+            const reducedImageData = ctx.createImageData(canvas.width, canvas.height);
+            for (let i = 0; i < data.length; i += 4) {
+                const alpha = data[i + 3];
+                if (alpha === 0) {
+                    reducedImageData.data[i + 3] = 0;
+                    continue;
+                }
+                const r = data[i], g = data[i + 1], b = data[i + 2];
+                let bestIdx = 0, bestDist = Infinity;
+                for (let j = 0; j < palette.length; j++) {
+                    const pr = palette[j][0], pg = palette[j][1], pb = palette[j][2];
+                    const dr = r - pr, dg = g - pg, db = b - pb;
+                    const dist = 0.2126*dr*dr + 0.7152*dg*dg + 0.0722*db*db;
+                    if (dist < bestDist) { bestDist = dist; bestIdx = j; }
+                }
+                reducedImageData.data[i]     = palette[bestIdx][0];
+                reducedImageData.data[i + 1] = palette[bestIdx][1];
+                reducedImageData.data[i + 2] = palette[bestIdx][2];
+                reducedImageData.data[i + 3] = 255;
+            }
+
+            ctx.putImageData(reducedImageData, 0, 0);
+            editedImageURL = canvas.toDataURL("image/png"); // update quantized image url
+
+            // update editedb blob after quantization
+            editedBlob = await fetch(editedImageURL).then((res) => res.blob());
+            setupSnappedImage(editedImageURL);
+            localStorage.setItem("editedImage", editedImageURL);
+            console.log('LocalStorage updated with edited image after quantization');
+        } catch (err) {
+            console.error("Error during quantization:", err);
+        }
+    };
+    img.onerror = () => console.error("Failed to load the snapped image for quantization.");
 }
 

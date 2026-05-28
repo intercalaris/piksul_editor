@@ -1,42 +1,6 @@
 const path = require("path");
 const db = require("../config/databaseConfig");
 const ProjectModel = require("../models/ProjectModel");
-const sharp = require("sharp");
-
-function medianCut(pixels, K) {
-    function rangeOf(bucket) {
-        let rMin=255,rMax=0,gMin=255,gMax=0,bMin=255,bMax=0;
-        for (const [r,g,b] of bucket) {
-            if (r<rMin)rMin=r; if (r>rMax)rMax=r;
-            if (g<gMin)gMin=g; if (g>gMax)gMax=g;
-            if (b<bMin)bMin=b; if (b>bMax)bMax=b;
-        }
-        return [rMax-rMin, gMax-gMin, bMax-bMin];
-    }
-
-    let buckets = [pixels.slice()];
-    while (buckets.length < K) {
-        let bestB = -1, bestCh = 0, bestRange = -1;
-        for (let b = 0; b < buckets.length; b++) {
-            if (buckets[b].length < 2) continue;
-            const ranges = rangeOf(buckets[b]);
-            for (let ch = 0; ch < 3; ch++) {
-                if (ranges[ch] > bestRange) { bestRange = ranges[ch]; bestB = b; bestCh = ch; }
-            }
-        }
-        if (bestB === -1 || bestRange === 0) break;
-        const bucket = buckets[bestB];
-        bucket.sort((a, b) => a[bestCh] - b[bestCh]);
-        const mid = Math.floor(bucket.length / 2);
-        buckets.splice(bestB, 1, bucket.slice(0, mid), bucket.slice(mid));
-    }
-
-    return buckets.map(bucket => [
-        Math.round(bucket.reduce((s,p) => s+p[0], 0) / bucket.length),
-        Math.round(bucket.reduce((s,p) => s+p[1], 0) / bucket.length),
-        Math.round(bucket.reduce((s,p) => s+p[2], 0) / bucket.length),
-    ]);
-}
 
 module.exports = {
     getIndex: (req, res) => {
@@ -198,42 +162,6 @@ module.exports = {
         }
       },
       
-
-    quantizeImage: async (req, res) => {
-        if (!req.file) return res.status(400).send("No image provided");
-        const K = Math.max(2, Math.min(256, parseInt(req.body.colors) || 16));
-        try {
-            const { data, info } = await sharp(req.file.buffer)
-                .ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-
-            const pixels = [];
-            for (let i = 0; i < data.length; i += 4)
-                if (data[i+3] > 0) pixels.push([data[i], data[i+1], data[i+2]]);
-
-            const palette = medianCut(pixels, K);
-
-            const out = Buffer.from(data);
-            for (let i = 0; i < out.length; i += 4) {
-                if (out[i+3] === 0) continue;
-                const pr = out[i], pg = out[i+1], pb = out[i+2];
-                let best = 0, bestDist = Infinity;
-                for (let j = 0; j < palette.length; j++) {
-                    const dr = pr-palette[j][0], dg = pg-palette[j][1], db = pb-palette[j][2];
-                    const d = dr*dr + dg*dg + db*db;
-                    if (d < bestDist) { bestDist = d; best = j; }
-                }
-                out[i] = palette[best][0]; out[i+1] = palette[best][1]; out[i+2] = palette[best][2];
-            }
-
-            const result = await sharp(out, { raw: { width: info.width, height: info.height, channels: 4 } })
-                .png().toBuffer();
-            res.set("Content-Type", "image/png");
-            res.send(result);
-        } catch (err) {
-            console.error("Quantization error:", err);
-            res.status(500).send("Quantization failed");
-        }
-    },
 
     deleteProject: async (req, res) => {
         const projectID = req.params.id;

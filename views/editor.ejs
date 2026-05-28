@@ -44,7 +44,7 @@
         <figure>
           <div id="divisor"></div>
         </figure>
-        <input type="range" min="0" max="100" value="50" id="slider">
+        <input type="range" min="0" max="100" value="50" id="slider" ondragstart="return false">
       </div>
 
       <div id="options">
@@ -58,7 +58,13 @@
         <div id="controls" class="hidden">
           <div id="block-controls">
             <label for="block-size-input">Block Size: </label>
-            <input type="number" id="block-size-input" min="4" max="180">
+            <div class="number-spin-wrapper">
+              <input type="number" id="block-size-input" min="4" max="180">
+              <div class="spin-btns">
+                <button type="button" class="spin-up"></button>
+                <button type="button" class="spin-down"></button>
+              </div>
+            </div>
           </div>
           <div id="palette-controls">
             <label for="palette-size-select">Palette Size: </label>

@@ -2,8 +2,6 @@ const express = require("express");
 const router = express.Router();
 const mainController = require("../controllers/mainController");
 const upload = require("../config/filesConfig");
-const multer = require("multer");
-const uploadMemory = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // Auth is intentionally dormant. Do not wire it into the current product
 // unless account-based project storage becomes an active feature again.
@@ -33,8 +31,6 @@ router.post("/projects",
     mainController.createOrUpdateProject);   
 
 router.get("/sketch/:id", mainController.openInSketch);
-
-router.post("/quantize", uploadMemory.single("image"), mainController.quantizeImage);
 
 router.delete("/projects/:id", mainController.deleteProject);
 
