@@ -133,15 +133,23 @@ function setupOriginalImage(url, imgElement) {
     });
 }
 
-function setupSnappedImage(editedImageURL) {
-    divisor.style.backgroundImage = `url(${editedImageURL})`;
-    const comparisonRect = comparison.getBoundingClientRect();
-    divisor.style.backgroundSize = `${comparisonRect.width}px ${comparisonRect.height}px`;
+function setupSnappedImage(url) {
+    divisor.style.backgroundImage = `url(${url})`;
     divisor.style.backgroundRepeat = "no-repeat";
-    divisor.style.backgroundPosition = "top left";
+    const comparisonRect = comparison.getBoundingClientRect();
+    if (lastSnapGeometry) {
+        const { xo, yo, spanX, spanY, srcWidth, srcHeight } = lastSnapGeometry;
+        const scaleX = comparisonRect.width / srcWidth;
+        const scaleY = comparisonRect.height / srcHeight;
+        divisor.style.backgroundSize = `${spanX * scaleX}px ${spanY * scaleY}px`;
+        divisor.style.backgroundPosition = `${xo * scaleX}px ${yo * scaleY}px`;
+    } else {
+        divisor.style.backgroundSize = `${comparisonRect.width}px ${comparisonRect.height}px`;
+        divisor.style.backgroundPosition = "top left";
+    }
     downloadButton.classList.remove("hidden");
     saveProjectButton.classList.remove("hidden");
-    toggleColorChangeMapButton.classList.remove("hidden")
+    toggleColorChangeMapButton.classList.remove("hidden");
 }
 
 function populateBlockValue(img) {
@@ -627,6 +635,7 @@ function colorsAreDifferent(color1, color2, tolerance) {
 }
 
 let snappedImageURL = null;
+let lastSnapGeometry = null;
 
 async function snapToGrid(blockSize) {
     const img = new Image();
@@ -649,7 +658,10 @@ async function snapToGrid(blockSize) {
     const srcWidth = img.width;
     const srcHeight = img.height;
 
-    const grid = (lastAutoGrid && Math.abs(blockSize - lastAutoGrid.approxBlockSize) < 0.5)
+    if (!lastAutoGrid) {
+        lastAutoGrid = estimateGrid(imageData);
+    }
+    const grid = (Math.abs(blockSize - lastAutoGrid.approxBlockSize) <= 0.5)
         ? lastAutoGrid
         : estimateGridManual(imageData, blockSize);
     const { N_x, xo, N_y, yo, spanX, spanY } = grid;
@@ -700,16 +712,7 @@ async function snapToGrid(blockSize) {
     editedImageURL = snappedImageURL;
     editedBlob = await fetch(editedImageURL).then((res) => res.blob());
 
-    const croppedOrigCanvas = document.createElement("canvas");
-    croppedOrigCanvas.width  = spanX;
-    croppedOrigCanvas.height = spanY;
-    croppedOrigCanvas.getContext("2d").drawImage(
-        srcCanvas, xo, yo, spanX, spanY, 0, 0, spanX, spanY
-    );
-    document.querySelector("#comparison figure").style.backgroundImage =
-        `url(${croppedOrigCanvas.toDataURL("image/png")})`;
-    comparison.style.aspectRatio = `${spanX / spanY}`;
-
+    lastSnapGeometry = { xo, yo, spanX, spanY, srcWidth, srcHeight };
     setupSnappedImage(editedImageURL);
     localStorage.setItem("editedImage", editedImageURL);
     console.log(`LocalStorage updated with edited image after snapping`);
