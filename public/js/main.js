@@ -268,17 +268,19 @@ saveProjectButton?.addEventListener("click", async () => {
 
 blockSizeInput?.addEventListener("input", blockSizeChange);
 
-document.querySelector(".spin-up")?.addEventListener("click", () => {
+document.querySelector(".spin-up")?.addEventListener("click", (e) => {
+    e.currentTarget.blur();
     const max = parseInt(blockSizeInput.max, 10);
     const val = parseInt(blockSizeInput.value, 10) || 4;
     blockSizeInput.value = Math.min(val + 1, max);
-    blockSizeInput.dispatchEvent(new Event("input"));
+    requestAnimationFrame(() => blockSizeInput.dispatchEvent(new Event("input")));
 });
-document.querySelector(".spin-down")?.addEventListener("click", () => {
+document.querySelector(".spin-down")?.addEventListener("click", (e) => {
+    e.currentTarget.blur();
     const min = parseInt(blockSizeInput.min, 10);
     const val = parseInt(blockSizeInput.value, 10) || 4;
     blockSizeInput.value = Math.max(val - 1, min);
-    blockSizeInput.dispatchEvent(new Event("input"));
+    requestAnimationFrame(() => blockSizeInput.dispatchEvent(new Event("input")));
 });
 
 
