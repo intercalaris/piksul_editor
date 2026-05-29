@@ -120,7 +120,7 @@ function setupOriginalImage(url, imgElement) {
         const img = new Image();
         img.onload = () => {
             const aspectRatio = img.width / img.height;
-            comparison.style.aspectRatio = `${aspectRatio}`;
+            comparison.style.setProperty("--img-ar", aspectRatio);
             imgElement.style.backgroundImage = `url(${url})`;
             originalImageURL = url;
             resolve();

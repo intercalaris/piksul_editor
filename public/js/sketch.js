@@ -25,8 +25,11 @@ let originalImage;
 let undoStack = [];
 
 function fitCanvasToViewport() {
+    // At <=768px the layout stacks (canvas above, tools below), so the canvas
+    // must give up vertical room to keep the tools on-screen.
+    const stacked = window.innerWidth <= 768;
     const maxW = window.innerWidth * 0.87;
-    const maxH = window.innerHeight * 0.82;
+    const maxH = window.innerHeight * (stacked ? 0.5 : 0.82);
     const scale = Math.min(maxW / imageCanvas.width, maxH / imageCanvas.height);
     const cssW = Math.round(imageCanvas.width * scale);
     const cssH = Math.round(imageCanvas.height * scale);

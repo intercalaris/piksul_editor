@@ -407,12 +407,15 @@ select#palette-size-select option {
 
 
 #comparison {
-    width: 40vw;
+    --img-ar: 1.7778;
+    /* largest box of the image's aspect ratio that fits both a width and a height budget,
+       so the image and the buttons stay visible together. */
+    width: min(40vw, calc(var(--img-ar) * 80vh));
     max-width: 50vw;
     height: auto;
     overflow: hidden;
     position: relative;
-    aspect-ratio: 16/9;
+    aspect-ratio: var(--img-ar);
     align-self: flex-start;
 }
 
@@ -521,7 +524,9 @@ input[type="range"]::-moz-range-thumb {
 	}
 
 	#comparison {
-		width: 85vw;
+		/* stacked layout: image sits above the controls, so leave more of the
+		   viewport height for the buttons below it. */
+		width: min(85vw, calc(var(--img-ar) * 45vh));
 		max-width: 85vw;
 	}
 	header .button {
