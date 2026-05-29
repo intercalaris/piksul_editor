@@ -10,6 +10,8 @@ const resetButton = document.getElementById("reset-button");
 const colorPalette = document.getElementById("color-palette");
 const saveProjectButton = document.getElementById("save-project-button");
 const downloadButton = document.getElementById("download-button");
+const exportControls = document.getElementById("export-controls");
+const exportScaleInput = document.getElementById("export-scale-input");
 const imageCanvas = document.getElementById("image-canvas");
 const canvasContainer = document.getElementById("canvas-container");
 const gridCanvas = document.getElementById("grid-canvas");
@@ -23,6 +25,41 @@ let isTouchMoved = false;
 let currentColor = colorPicker.value;
 let originalImage;
 let undoStack = [];
+const EXPORT_MAX_SCALE = 64;
+const EXPORT_MAX_EDGE = 10000;
+const EXPORT_SCALE_OPTIONS = [1, 2, 4, 8, 16, 32, 64];
+
+function getMaxExportScale(width, height) {
+    const longEdge = Math.max(width, height);
+    if (!longEdge) return 1;
+    return Math.max(1, Math.min(EXPORT_MAX_SCALE, Math.floor(EXPORT_MAX_EDGE / longEdge)));
+}
+
+function updateExportSizeReadout() {
+    if (!exportScaleInput || !imageCanvas.width || !imageCanvas.height) return;
+    const maxScale = getMaxExportScale(imageCanvas.width, imageCanvas.height);
+    exportScaleInput.querySelectorAll("option").forEach((option) => {
+        const scale = parseInt(option.value, 10);
+        option.disabled = scale > maxScale;
+        option.textContent = `${scale} (${imageCanvas.width * scale}x${imageCanvas.height * scale})`;
+    });
+    const currentScale = parseInt(exportScaleInput.value, 10) || 1;
+    const scale = currentScale <= maxScale
+        ? currentScale
+        : EXPORT_SCALE_OPTIONS.filter((option) => option <= maxScale).pop() || 1;
+    exportScaleInput.value = scale;
+}
+
+function getExportDataURL(scale) {
+    if (scale === 1) return imageCanvas.toDataURL("image/png");
+    const canvas = document.createElement("canvas");
+    canvas.width = imageCanvas.width * scale;
+    canvas.height = imageCanvas.height * scale;
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(imageCanvas, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/png");
+}
 
 function fitCanvasToViewport() {
     // At <=768px the layout stacks (canvas above, tools below), so the canvas
@@ -66,6 +103,7 @@ const loadEditedImage = async () => {
             originalImage = img;
             saveStateForUndo();
             extractTopColors();
+            updateExportSizeReadout();
             console.log("Image loaded.");
             resolve();
         };
@@ -517,11 +555,17 @@ saveProjectButton?.addEventListener("click", async (e) => {
 });
 
 
+exportScaleInput?.addEventListener("change", () => {
+    updateExportSizeReadout();
+    exportScaleInput.blur();
+});
+
 downloadButton.addEventListener("click", (e) => {
     e.preventDefault();
+    const scale = parseInt(exportScaleInput?.value, 10) || 1;
     const link = document.createElement("a");
-    link.href = imageCanvas.toDataURL("image/png");
-    link.download = `piksul.png`;
+    link.href = getExportDataURL(scale);
+    link.download = `piksul_x${scale}.png`;
     link.click();
 });
 

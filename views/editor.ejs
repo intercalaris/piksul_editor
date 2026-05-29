@@ -84,7 +84,21 @@
         </div>
         <div id="output-options" class="hidden">
           <a href="#" class="button hidden" id="open-sketch">Open in Sketch</a>
-          <a class="button hidden" id="download-button">Download Image</a> 
+          <div id="export-controls" class="export-controls hidden">
+            <div id="export-scale-controls">
+              <label for="export-scale-input">Scale: </label>
+              <select id="export-scale-input">
+                <option value="1">1x</option>
+                <option value="2">2x</option>
+                <option value="4">4x</option>
+                <option value="8">8x</option>
+                <option value="16">16x</option>
+                <option value="32">32x</option>
+                <option value="64">64x</option>
+              </select>
+            </div>
+            <a class="button hidden" id="download-button">Export</a>
+          </div>
           <a href="#" class="button hidden" id="save-project" class="button save-project">Publish to Site</a>
         </div>
       </div>

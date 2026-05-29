@@ -1,6 +1,9 @@
 const uploadInput = document.getElementById("upload");
 const downloadButton = document.getElementById("download-button");
 const blockSizeInput = document.getElementById("block-size-input");
+const blockControls = document.getElementById("block-controls");
+const exportControls = document.getElementById("export-controls");
+const exportScaleInput = document.getElementById("export-scale-input");
 const controls = document.getElementById("controls");
 const outputOptions = document.getElementById("output-options");
 const divisor = document.getElementById("divisor");
@@ -23,9 +26,77 @@ let originalFileName = "";
 let estimatedBlockSize = 8;
 let estimatedTolerance = 30;
 let lastAutoGrid = null;
+let exportImageWidth = 0;
+let exportImageHeight = 0;
+const EXPORT_MAX_SCALE = 64;
+const EXPORT_MAX_EDGE = 10000;
+const EXPORT_SCALE_OPTIONS = [1, 2, 4, 8, 16, 32, 64];
 const toggleColorChangeMapButton = document.getElementById("toggle-color-change-map-button");
 let isColorChangeMapVisible = false;
 let colorChangePositions = [];
+
+function loadImageElement(url) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
+    });
+}
+
+function getMaxExportScale(width, height) {
+    const longEdge = Math.max(width, height);
+    if (!longEdge) return 1;
+    return Math.max(1, Math.min(EXPORT_MAX_SCALE, Math.floor(EXPORT_MAX_EDGE / longEdge)));
+}
+
+function updateExportSizeReadout() {
+    if (!exportScaleInput || !exportImageWidth || !exportImageHeight) return;
+    const maxScale = getMaxExportScale(exportImageWidth, exportImageHeight);
+    exportScaleInput.querySelectorAll("option").forEach((option) => {
+        const scale = parseInt(option.value, 10);
+        option.disabled = scale > maxScale;
+        option.textContent = `${scale} (${exportImageWidth * scale}x${exportImageHeight * scale})`;
+    });
+    const currentScale = parseInt(exportScaleInput.value, 10) || 1;
+    const scale = currentScale <= maxScale
+        ? currentScale
+        : EXPORT_SCALE_OPTIONS.filter((option) => option <= maxScale).pop() || 1;
+    exportScaleInput.value = scale;
+}
+
+async function updateExportImageSize(url) {
+    if (!url) return;
+    const sourceUrl = url;
+    const img = await loadImageElement(url);
+    if (sourceUrl !== editedImageURL) return;
+    exportImageWidth = img.naturalWidth || img.width;
+    exportImageHeight = img.naturalHeight || img.height;
+    updateExportSizeReadout();
+}
+
+async function getExportDataURL(url, scale) {
+    if (scale === 1) return url;
+    const img = await loadImageElement(url);
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/png");
+}
+
+function showExportControls() {
+    downloadButton.classList.remove("hidden");
+    exportControls?.classList.remove("hidden");
+    updateExportSizeReadout();
+}
+
+function hideExportControls() {
+    downloadButton.classList.add("hidden");
+    exportControls?.classList.add("hidden");
+}
 
 function calculateColorChanges(img) {
     const canvas = document.createElement("canvas");
@@ -134,6 +205,7 @@ function setupOriginalImage(url, imgElement) {
 }
 
 function setupSnappedImage(url) {
+    if (!url) return;
     divisor.style.backgroundImage = `url(${url})`;
     divisor.style.backgroundRepeat = "no-repeat";
     const comparisonRect = comparison.getBoundingClientRect();
@@ -147,7 +219,8 @@ function setupSnappedImage(url) {
         divisor.style.backgroundSize = `${comparisonRect.width}px ${comparisonRect.height}px`;
         divisor.style.backgroundPosition = "top left";
     }
-    downloadButton.classList.remove("hidden");
+    updateExportImageSize(url).catch((error) => console.error("Error loading export dimensions:", error));
+    showExportControls();
     saveProjectButton.classList.remove("hidden");
     toggleColorChangeMapButton.classList.remove("hidden");
 }
@@ -198,7 +271,7 @@ uploadInput?.addEventListener("change", async (event) => {
     colorChangePositions = [];
     divisor.style.backgroundImage = "";
     paletteSizeSelect.value = "";
-    downloadButton.classList.add("hidden");
+    hideExportControls();
     saveProjectButton.classList.add("hidden");
 
     // load new image as object url
@@ -232,7 +305,7 @@ uploadInput?.addEventListener("change", async (event) => {
 
         // auto-snap image to grid
         await snapToGrid(blockSize);
-        downloadButton.classList.remove("hidden");
+        showExportControls();
         saveProjectButton.classList.remove("hidden");
         openSketchButton.classList.remove("hidden");
     };
@@ -276,19 +349,24 @@ saveProjectButton?.addEventListener("click", async () => {
 
 blockSizeInput?.addEventListener("input", blockSizeChange);
 
-document.querySelector(".spin-up")?.addEventListener("click", (e) => {
+blockControls?.querySelector(".spin-up")?.addEventListener("click", (e) => {
     e.currentTarget.blur();
     const max = parseInt(blockSizeInput.max, 10);
     const val = parseInt(blockSizeInput.value, 10) || 4;
     blockSizeInput.value = Math.min(val + 1, max);
     requestAnimationFrame(() => blockSizeInput.dispatchEvent(new Event("input")));
 });
-document.querySelector(".spin-down")?.addEventListener("click", (e) => {
+blockControls?.querySelector(".spin-down")?.addEventListener("click", (e) => {
     e.currentTarget.blur();
     const min = parseInt(blockSizeInput.min, 10);
     const val = parseInt(blockSizeInput.value, 10) || 4;
     blockSizeInput.value = Math.max(val - 1, min);
     requestAnimationFrame(() => blockSizeInput.dispatchEvent(new Event("input")));
+});
+
+exportScaleInput?.addEventListener("change", () => {
+    updateExportSizeReadout();
+    exportScaleInput.blur();
 });
 
 
@@ -297,7 +375,7 @@ async function blockSizeChange() {
     try {
         await snapToGrid(userBlockSize);
         paletteSizeChange();
-        downloadButton.classList.remove("hidden");
+        showExportControls();
         saveProjectButton.classList.remove("hidden");
         localStorage.setItem("blockSize", userBlockSize);
         console.log(`LocalStorage updated with new block size: ${userBlockSize}`);
@@ -306,11 +384,12 @@ async function blockSizeChange() {
     }
 }
 
-downloadButton?.addEventListener("click", () => {
+downloadButton?.addEventListener("click", async () => {
     if (editedImageURL) {
+        const scale = parseInt(exportScaleInput?.value, 10) || 1;
         const link = document.createElement("a");
-        link.href = editedImageURL;
-        link.download = `piksul_${originalFileName}.png`;
+        link.href = await getExportDataURL(editedImageURL, scale);
+        link.download = `piksul_${originalFileName}_x${scale}.png`;
         link.click();
     }
 });
@@ -389,7 +468,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-paletteSizeSelect?.addEventListener("change", paletteSizeChange);
+paletteSizeSelect?.addEventListener("change", () => {
+    paletteSizeChange();
+    paletteSizeSelect.blur();
+});
 
 function paletteSizeChange() {
     const paletteSize = parseInt(paletteSizeSelect.value, 10);

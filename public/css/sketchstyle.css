@@ -154,6 +154,59 @@ canvas {
   background: rgba(178, 173, 211, 0.503);
   box-shadow: 0 0 12px rgba(255, 255, 255, 0.9), 0 0 25px rgba(255, 255, 255, 0.4);
 }
+
+#export-controls {
+    display: grid;
+    grid-template-columns: 1fr 0.2fr 4fr 0.5fr 4fr;
+    width: 100%;
+}
+
+#export-scale-controls {
+    display: contents;
+}
+
+#export-scale-controls label {
+    grid-column: 1;
+    align-self: center;
+    text-align: left;
+    margin-left: 8px;
+    margin-bottom: 0;
+    line-height: 1;
+}
+
+#export-scale-input {
+    grid-column: 3;
+    width: 100%;
+    min-width: 0;
+    margin: 4px 0;
+    font-family: inherit;
+    font-size: inherit;
+    color: #fff;
+    background: rgba(23, 10, 103, 0.141);
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.2), 0 0 8px rgba(255, 255, 255, 0.2);
+    border: 1.5px solid #fff;
+    border-radius: 5px;
+    padding: 0.8rem 1.9rem;
+    cursor: pointer;
+}
+
+#export-scale-input:focus {
+    outline: none;
+}
+
+#export-scale-input option {
+    background-color: #0e0e2b;
+    color: #fff;
+}
+
+#export-controls #download-button {
+    grid-column: 5;
+    margin: 4px 8px 4px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* General Tool Buttons */
 
 #undo-reset, #draw-erase {
