@@ -282,13 +282,15 @@ body {
 #options-and-editor {
 	display: flex;
 	gap: 3rem;
-	justify-content: flex-start;
+	justify-content: center;
+	width: 100%;
 }
 #options {
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
 	gap: 2rem;
+	min-width: 330px;
 }
 #options .button {
 	padding: 0.5rem 1.3rem;
@@ -332,7 +334,7 @@ body {
 
 #export-controls {
 	display: grid;
-	grid-template-columns: 1fr 0.2fr 4fr 0.5fr 4fr;
+	grid-template-columns: 1fr 0.2fr 5fr 0.5fr 3fr;
 	width: 100%;
 }
 
@@ -473,8 +475,8 @@ select#export-scale-input option {
     --img-ar: 1.7778;
     /* largest box of the image's aspect ratio that fits both a width and a height budget,
        so the image and the buttons stay visible together. */
-    width: min(40vw, calc(var(--img-ar) * 80vh));
-    max-width: 50vw;
+    width: min(75vw, calc(var(--img-ar) * 85vh));
+    min-width: 0;
     height: auto;
     overflow: hidden;
     position: relative;
@@ -554,11 +556,6 @@ input[type="range"]::-moz-range-thumb {
 	}
 }
 @media (max-width: 830px) {
-	#controls {
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-	
 	#output-options {
 		flex-direction: column;
 	}
@@ -589,8 +586,12 @@ input[type="range"]::-moz-range-thumb {
 	#comparison {
 		/* stacked layout: image sits above the controls, so leave more of the
 		   viewport height for the buttons below it. */
-		width: min(85vw, calc(var(--img-ar) * 45vh));
+		width: min(85vw, calc(var(--img-ar) * 70vh));
 		max-width: 85vw;
+	}
+	#options {
+		width: min(85vw, calc(var(--img-ar) * 70vh));
+		min-width: 330px;
 	}
 	header .button {
 		padding: 1rem 1.5rem;

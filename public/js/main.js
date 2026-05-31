@@ -1,4 +1,5 @@
 const uploadInput = document.getElementById("upload");
+const uploadContainer = document.getElementById("upload-container");
 const downloadButton = document.getElementById("download-button");
 const blockSizeInput = document.getElementById("block-size-input");
 const blockControls = document.getElementById("block-controls");
@@ -30,7 +31,7 @@ let exportImageWidth = 0;
 let exportImageHeight = 0;
 const EXPORT_MAX_SCALE = 64;
 const EXPORT_MAX_EDGE = 10000;
-const EXPORT_SCALE_OPTIONS = [1, 2, 4, 8, 16, 32, 64];
+const EXPORT_SCALE_OPTIONS = [1, 2, 4, 8, 16, 32];
 const toggleColorChangeMapButton = document.getElementById("toggle-color-change-map-button");
 let isColorChangeMapVisible = false;
 let colorChangePositions = [];
@@ -96,6 +97,10 @@ function showExportControls() {
 function hideExportControls() {
     downloadButton.classList.add("hidden");
     exportControls?.classList.add("hidden");
+}
+
+function hideUploadControls() {
+    uploadContainer?.classList.add("hidden");
 }
 
 function calculateColorChanges(img) {
@@ -252,9 +257,8 @@ async function deleteProject(click) {
 uploadInput?.addEventListener("change", async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+    hideUploadControls();
     openSketchButton.classList.remove("hidden");
-    const getStartedText = document.getElementById("get-started");
-    getStartedText.style.display = "none";
     // reset data attributes
     const editorMain = document.getElementById("editor");
     editorMain.setAttribute("data-project-id", "");
@@ -418,8 +422,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         
         if (projectId && originalImageFilename) {
             const imagePath = `/gallery/image/${originalImageFilename}`;
-            const getStartedText = document.getElementById("get-started");
-            getStartedText.style.display = "none";
+            hideUploadControls();
             openSketchButton.classList.remove("hidden");
             try {
                 // fetch original image as blob
@@ -719,6 +722,80 @@ function colorsAreDifferent(color1, color2, tolerance) {
 let snappedImageURL = null;
 let lastSnapGeometry = null;
 
+function cleanNearDuplicateColors(imageData, tolerance = 2) {
+    const data = imageData.data;
+    const colors = new Map();
+    for (let i = 0; i < data.length; i += 4) {
+        const key = `${data[i]},${data[i + 1]},${data[i + 2]},${data[i + 3]}`;
+        let color = colors.get(key);
+        if (!color) {
+            color = {
+                r: data[i],
+                g: data[i + 1],
+                b: data[i + 2],
+                a: data[i + 3],
+                count: 0,
+            };
+            colors.set(key, color);
+        }
+        color.count++;
+    }
+
+    const clusters = [];
+    const sortedColors = [...colors.values()].sort((a, b) => b.count - a.count);
+    for (const color of sortedColors) {
+        let cluster = null;
+        for (const candidate of clusters) {
+            const c = candidate.canonical;
+            if (
+                color.a === c.a &&
+                Math.abs(color.r - c.r) <= tolerance &&
+                Math.abs(color.g - c.g) <= tolerance &&
+                Math.abs(color.b - c.b) <= tolerance
+            ) {
+                cluster = candidate;
+                break;
+            }
+        }
+        if (!cluster) {
+            cluster = { canonical: color, members: [] };
+            clusters.push(cluster);
+        }
+        cluster.members.push(color);
+    }
+
+    const replacements = new Map();
+    for (const cluster of clusters) {
+        let total = 0, rSum = 0, gSum = 0, bSum = 0;
+        for (const color of cluster.members) {
+            total += color.count;
+            rSum += color.r * color.count;
+            gSum += color.g * color.count;
+            bSum += color.b * color.count;
+        }
+        const avg = { r: rSum / total, g: gSum / total, b: bSum / total };
+        cluster.members.sort((a, b) => {
+            if (b.count !== a.count) return b.count - a.count;
+            const ad = (a.r - avg.r) ** 2 + (a.g - avg.g) ** 2 + (a.b - avg.b) ** 2;
+            const bd = (b.r - avg.r) ** 2 + (b.g - avg.g) ** 2 + (b.b - avg.b) ** 2;
+            if (ad !== bd) return ad - bd;
+            return (a.r - b.r) || (a.g - b.g) || (a.b - b.b) || (a.a - b.a);
+        });
+        const canonical = cluster.members[0];
+        for (const color of cluster.members) {
+            replacements.set(`${color.r},${color.g},${color.b},${color.a}`, canonical);
+        }
+    }
+
+    for (let i = 0; i < data.length; i += 4) {
+        const color = replacements.get(`${data[i]},${data[i + 1]},${data[i + 2]},${data[i + 3]}`);
+        data[i] = color.r;
+        data[i + 1] = color.g;
+        data[i + 2] = color.b;
+        data[i + 3] = color.a;
+    }
+}
+
 async function snapToGrid(blockSize) {
     const img = new Image();
     await new Promise((resolve, reject) => {
@@ -789,6 +866,7 @@ async function snapToGrid(blockSize) {
         }
     }
 
+    cleanNearDuplicateColors(outImageData);
     ctx.putImageData(outImageData, 0, 0);
     snappedImageURL = canvas.toDataURL("image/png");
     editedImageURL = snappedImageURL;

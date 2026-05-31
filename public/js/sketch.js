@@ -27,7 +27,7 @@ let originalImage;
 let undoStack = [];
 const EXPORT_MAX_SCALE = 64;
 const EXPORT_MAX_EDGE = 10000;
-const EXPORT_SCALE_OPTIONS = [1, 2, 4, 8, 16, 32, 64];
+const EXPORT_SCALE_OPTIONS = [1, 2, 4, 8, 16, 32];
 
 function getMaxExportScale(width, height) {
     const longEdge = Math.max(width, height);
