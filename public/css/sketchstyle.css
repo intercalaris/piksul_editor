@@ -70,16 +70,20 @@ main {
     padding: 20px 20px 0 20px;
 }
 
+/* Combined wrapper — mirrors the editor's #options-and-editor.
+   --img-ar (art aspect ratio) is set from JS and inherited by the viewer and
+   the tools panel so both can size off it. */
 .editor-container {
+    --img-ar: 1;
     display: flex;
-    flex-wrap: wrap;
     justify-content: center;
-    gap: 30px;
+    gap: 3rem;
     width: 100%;
-    max-width: 1200px;
-
 }
 
+/* Image viewer — mirrors the editor's #comparison: largest box of the art's
+   aspect ratio that fits both a width and a height budget, so the canvas and
+   the tools stay visible together. */
 .canvas-container {
     display: grid;
     place-items: center;
@@ -87,10 +91,15 @@ main {
     border: 1px solid #333;
     border-radius: 5px;
     padding: 10px;
+    width: min(75vw, calc(var(--img-ar) * 85vh));
+    min-width: 0;
+    align-self: flex-start;
 }
 
 canvas {
     grid-area: 1 / 1;
+    width: 100%;
+    height: auto;
     border: 1px solid #444;
     background-color: #121212;
     image-rendering: pixelated;
@@ -101,12 +110,22 @@ canvas {
     background-color: transparent;
 }
 
-/* Tools Container */
+/* Controls container — mirrors the editor's #options */
 .tools-container {
-    flex: 0 1 16rem;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    justify-content: space-between;
+    gap: 2rem;
+    min-width: 330px;
+}
+
+/* Upper group (drawing tools) and lower group (output) — mirror the editor's
+   #controls and #output-options. */
+#controls,
+#output-options {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
 }
 
 .tool {
@@ -259,20 +278,17 @@ canvas {
         align-items: center;
     }
 
-    .tools-container {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 10px;
-        justify-content: center;
+    /* Stacked: viewer sits above the tools, so give up vertical room (70vh)
+       for the buttons below it — mirrors the editor's #comparison. */
+    .canvas-container {
+        width: min(85vw, calc(var(--img-ar) * 70vh));
+        max-width: 85vw;
     }
 
-    .tool {
-        flex: 1 1 45%;
-        text-align: center;
-        justify-content: center;
-    }
-    #palette-container {
-        flex: 0 0 auto;
+    /* Tools match the viewer width but never go below 330px — mirrors #options. */
+    .tools-container {
+        width: min(85vw, calc(var(--img-ar) * 70vh));
+        min-width: 330px;
     }
     .color-palette {
         width: 100%;

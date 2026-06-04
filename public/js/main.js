@@ -211,6 +211,10 @@ function setupOriginalImage(url, imgElement) {
 
 function setupSnappedImage(url) {
     if (!url) return;
+    showExportControls();
+    saveProjectButton.classList.remove("hidden");
+    toggleColorChangeMapButton.classList.remove("hidden");
+
     divisor.style.backgroundImage = `url(${url})`;
     divisor.style.backgroundRepeat = "no-repeat";
     const comparisonRect = comparison.getBoundingClientRect();
@@ -225,9 +229,13 @@ function setupSnappedImage(url) {
         divisor.style.backgroundPosition = "top left";
     }
     updateExportImageSize(url).catch((error) => console.error("Error loading export dimensions:", error));
-    showExportControls();
-    saveProjectButton.classList.remove("hidden");
-    toggleColorChangeMapButton.classList.remove("hidden");
+}
+
+function setupSnappedImageAfterLayout(url) {
+    requestAnimationFrame(() => {
+        setupSnappedImage(url);
+        requestAnimationFrame(() => setupSnappedImage(url));
+    });
 }
 
 function populateBlockValue(img) {
@@ -484,7 +492,7 @@ function paletteSizeChange() {
         // if none selected, reset to regular snapped image
         if (snappedImageURL) {
             editedImageURL = snappedImageURL;
-            setupSnappedImage(editedImageURL);
+        setupSnappedImageAfterLayout(editedImageURL);
             localStorage.setItem("editedImage", editedImageURL);
             console.log(`LocalStorage updated with edited image (no quantization)`);
         } else {

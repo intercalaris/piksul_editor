@@ -61,24 +61,14 @@ function getExportDataURL(scale) {
     return canvas.toDataURL("image/png");
 }
 
-function fitCanvasToViewport() {
-    // At <=768px the layout stacks (canvas above, tools below), so the canvas
-    // must give up vertical room to keep the tools on-screen.
-    const stacked = window.innerWidth <= 768;
-    const maxW = window.innerWidth * 0.87;
-    const maxH = window.innerHeight * (stacked ? 0.5 : 0.82);
-    const scale = Math.min(maxW / imageCanvas.width, maxH / imageCanvas.height);
-    const cssW = Math.round(imageCanvas.width * scale);
-    const cssH = Math.round(imageCanvas.height * scale);
-    imageCanvas.style.width = cssW + 'px';
-    imageCanvas.style.height = cssH + 'px';
-    gridCanvas.style.width = cssW + 'px';
-    gridCanvas.style.height = cssH + 'px';
+function applyImageAspectRatio() {
+    // The viewer and tools are sized by CSS off the art's aspect ratio, exactly
+    // like the editor — JS just feeds the ratio in. The canvas itself fills the
+    // viewer (width:100%; height:auto), so no manual pixel sizing is needed.
+    if (!imageCanvas.width || !imageCanvas.height) return;
+    const wrapper = document.querySelector(".editor-container");
+    wrapper?.style.setProperty("--img-ar", imageCanvas.width / imageCanvas.height);
 }
-
-window.addEventListener('resize', () => {
-    if (originalImage) fitCanvasToViewport();
-});
 
 const loadEditedImage = async () => {
     let img = new Image();
@@ -99,7 +89,7 @@ const loadEditedImage = async () => {
             gridCanvas.width = imageCanvas.width;
             gridCanvas.height = imageCanvas.height;
             imageCtx.drawImage(img, 0, 0);
-            fitCanvasToViewport();
+            applyImageAspectRatio();
             originalImage = img;
             saveStateForUndo();
             extractTopColors();
