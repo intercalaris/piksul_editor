@@ -136,16 +136,22 @@ canvas {
     gap: 0;
 }
 
+/* Bring the palette ↔ Draw/Erase gap down to roughly the same ~8px spacing as
+   the rest of the panel instead of a full 2rem. */
+#controls {
+    gap: 1rem;
+}
+
 .tool {
     display: flex;
     flex-direction: column;
     align-items: stretch;
 }
 
-/* Keep the color group (label, picker, swatches) the same compact width and
-   centered in the panel — they all stretch to the container's width. */
+/* 8×2 swatch layout. Inset by the buttons' 8px side margins so the palette and
+   color picker line up with the width of the button rows below. */
 #palette-container {
-    width: calc(50% + 30px);
+    width: calc(100% - 16px);
     align-self: center;
 }
 
@@ -260,7 +266,7 @@ canvas {
 }
 .color-palette {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(8, 1fr);
     gap: 5px;
     padding: 5px;
     border: 1px solid #333;
@@ -311,11 +317,6 @@ canvas {
     }
     .color-palette {
         width: 100%;
-    }
-
-    .color-swatch {
-        width: 25px;
-        height: 25px;
     }
     .navigation {
         gap: 0.5rem;
