@@ -598,6 +598,11 @@ input[type="range"]::-moz-range-thumb {
 		width: 330px;
 		min-width: 330px;
 	}
+	header {
+		/* the desktop 5rem side padding wastes ~100px on a phone, forcing the
+		   nav buttons to wrap — shrink it so they fit on one line. */
+		padding: 0.5rem 1rem;
+	}
 	header .button {
 		padding: 1rem 1.5rem;
 		font-size: 1.5rem;
