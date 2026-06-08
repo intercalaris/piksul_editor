@@ -288,8 +288,8 @@ body {
 #options {
 	display: flex;
 	flex-direction: column;
-	justify-content: space-between;
-	gap: 2rem;
+	justify-content: center;
+	gap: 9rem;
 	width: 330px;
 	min-width: 330px;
 }
@@ -597,6 +597,7 @@ input[type="range"]::-moz-range-thumb {
 	#options {
 		width: 330px;
 		min-width: 330px;
+		gap: 2rem;
 	}
 	header {
 		/* the desktop 5rem side padding wastes ~100px on a phone, forcing the
