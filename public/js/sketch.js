@@ -25,6 +25,8 @@ let isTouchMoved = false;
 let currentColor = colorPicker.value;
 let originalImage;
 let undoStack = [];
+let paletteColors = [];
+const MAX_PALETTE = 16;
 const EXPORT_MAX_SCALE = 64;
 const EXPORT_MAX_EDGE = 10000;
 const EXPORT_SCALE_OPTIONS = [1, 2, 4, 8, 16, 32];
@@ -73,7 +75,11 @@ function applyImageAspectRatio() {
 const loadEditedImage = async () => {
     let img = new Image();
     let imageUrl;
-    if (localStorage.getItem("editedImage")) {
+    if (editedImageFilename) {
+        imageUrl = `/gallery/image/${editedImageFilename}`;
+        blockSize = 1;
+        console.log("Loading saved project image.");
+    } else if (localStorage.getItem("editedImage")) {
         imageUrl = localStorage.getItem("editedImage");
         blockSize = 1;
         console.log("Loading image from localStorage.");
@@ -115,9 +121,9 @@ const snapToGrid = (x, y) => {
     };
 };
 
-// save canvas for undo
+// save canvas + palette for undo
 const saveStateForUndo = () => {
-    undoStack.push(imageCanvas.toDataURL());
+    undoStack.push({ image: imageCanvas.toDataURL(), palette: [...paletteColors] });
     if (undoStack.length > 20) {
         undoStack.shift(); // 20 undos
     }
@@ -146,10 +152,11 @@ undoButton.addEventListener("click", (e) => {
     undoButton.classList.add("selected");
     const previousState = undoStack.pop();
     const img = new Image();
-    img.src = previousState;
+    img.src = previousState.image;
     img.onload = () => {
         imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
         imageCtx.drawImage(img, 0, 0);
+        renderPalette(previousState.palette);
     };
     setTimeout(() => {
         undoButton.classList.remove("selected");
@@ -248,6 +255,7 @@ const floodFill = (startX, startY) => {
     
 
     imageCtx.putImageData(imageData, 0, 0);
+    addColorToPalette(currentColor);
 };
 
 const hexToRGB = (hex) => {
@@ -269,8 +277,9 @@ resetButton.addEventListener("click", (e) => {
     resetButton.classList.add("selected");
     imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
     imageCtx.drawImage(originalImage, 0, 0);
-    drawGrid(); 
-    undoStack = []; 
+    drawGrid();
+    extractTopColors(); // rebuild the original palette
+    undoStack = [];
     setTimeout(() => {
         resetButton.classList.remove("selected");
     }, 400);
@@ -304,26 +313,73 @@ const extractTopColors = () => {
 
     const topColors = Object.entries(colorCounts)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 16)
-        .map(([color]) => color);
+        .slice(0, MAX_PALETTE)
+        .map(([color]) => rgbToHex(color));
 
-    // render color palette
+    renderPalette(topColors);
+};
+
+// rebuild the whole swatch strip from a list of hex colors (keeps paletteColors
+// and the DOM in sync). Used on load, undo, and reset.
+const renderPalette = (colors) => {
     colorPalette.innerHTML = "";
-    topColors.forEach((color) => {
-        const colorDiv = document.createElement("div");
-        colorDiv.className = "color-swatch";
-        colorDiv.style.backgroundColor = color;    
-        colorDiv.addEventListener("click", () => {
-            if (isErasing) {
-                isErasing = false;
-            }
-            currentColor = rgbToHex(color);
-            colorPicker.value = currentColor;
-            highlightSelectedTool();
-        });
-          
-        colorPalette.appendChild(colorDiv);
+    paletteColors = [];
+    colors.forEach((hex) => {
+        paletteColors.push(hex);
+        colorPalette.appendChild(createSwatch(hex));
     });
+};
+
+// build a single palette swatch that selects its color when clicked
+const createSwatch = (hex) => {
+    const colorDiv = document.createElement("div");
+    colorDiv.className = "color-swatch";
+    colorDiv.style.backgroundColor = hex;
+    colorDiv.addEventListener("click", () => {
+        if (isErasing) {
+            isErasing = false;
+        }
+        currentColor = hex;
+        colorPicker.value = hex;
+        highlightSelectedTool();
+    });
+    return colorDiv;
+};
+
+// the set of opaque colors actually present in the canvas right now (hex)
+const getPresentColors = () => {
+    const { data } = imageCtx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
+    const present = new Set();
+    for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] === 0) continue;
+        present.add(rgbToHex(`rgb(${data[i]},${data[i + 1]},${data[i + 2]})`));
+    }
+    return present;
+};
+
+// remove a swatch by index, keeping paletteColors and the DOM in sync.
+const removeSwatch = (index) => {
+    paletteColors.splice(index, 1);
+    colorPalette.removeChild(colorPalette.children[index]);
+};
+
+// add a freshly-used color to the palette. While there's room it's simply added
+// (existing colors are kept even if they're no longer in the image). Only when
+// the palette is full do we free a slot — and only by dropping a color that has
+// vanished from the image; if every slot is still in use, nothing changes. The
+// palette is never persisted (recomputed from pixels on load), so this is purely
+// a session-time convenience.
+const addColorToPalette = (hex) => {
+    hex = hex.toLowerCase();
+    if (paletteColors.includes(hex)) return;
+    if (paletteColors.length >= MAX_PALETTE) {
+        const present = getPresentColors();
+        const stale = paletteColors.findIndex((c) => !present.has(c));
+        if (stale === -1) return; // full and every color still used → no room
+        removeSwatch(stale);
+    }
+    paletteColors.push(hex);
+    colorPalette.appendChild(createSwatch(hex));
 };
 
 // convert rgb to hex for updating color picker
@@ -336,6 +392,7 @@ const rgbToHex = (rgb) => {
 const drawBlock = (x, y, color) => {
     imageCtx.fillStyle = color;
     imageCtx.fillRect(x, y, blockSize, blockSize);
+    addColorToPalette(color);
 };
 
 // erase block
@@ -408,13 +465,21 @@ imageCanvas.addEventListener("mousemove", (e) => {
     }
 });
 
-imageCanvas.addEventListener("mouseup", () => {
-    isDrawing = false; 
-});
-
-imageCanvas.addEventListener("mouseleave", () => {
+// end of a draw/erase stroke: reconcile the palette (drop vanished colors) and,
+// for drawing, register the color just used.
+const endStroke = () => {
+    if (!isDrawing) return;
     isDrawing = false;
-});
+    // re-try adding the drawn color now the stroke is done: covering the last
+    // pixel of another color may have freed a slot. Erasing adds nothing.
+    if (!isErasing) {
+        addColorToPalette(currentColor);
+    }
+};
+
+imageCanvas.addEventListener("mouseup", endStroke);
+
+imageCanvas.addEventListener("mouseleave", endStroke);
 
 imageCanvas.addEventListener("touchstart", (e) => {
     if (e.touches.length === 1) {
@@ -469,6 +534,8 @@ imageCanvas.addEventListener("touchend", (e) => {
         const { x, y } = snapToGrid(getScaledTouchPosition(e).x, getScaledTouchPosition(e).y);
         saveStateForUndo();
         floodFill(x, y);
+    } else {
+        endStroke();
     }
     isDrawing = false;
     isTouchMoved = false;

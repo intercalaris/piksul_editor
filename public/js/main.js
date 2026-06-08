@@ -218,7 +218,7 @@ function setupSnappedImage(url) {
     divisor.style.backgroundImage = `url(${url})`;
     divisor.style.backgroundRepeat = "no-repeat";
     const comparisonRect = comparison.getBoundingClientRect();
-    if (lastSnapGeometry) {
+    if (lastSnapGeometry && !lastSnapGeometry.fullContext) {
         const { xo, yo, spanX, spanY, srcWidth, srcHeight } = lastSnapGeometry;
         const scaleX = comparisonRect.width / srcWidth;
         const scaleY = comparisonRect.height / srcHeight;
@@ -730,6 +730,65 @@ function colorsAreDifferent(color1, color2, tolerance) {
 let snappedImageURL = null;
 let lastSnapGeometry = null;
 
+function sampleMedianColor(data, srcWidth, srcHeight, sx1, sx2, sy1, sy2) {
+    const rs = [], gs = [], bs = [], as = [];
+    const iy1 = sy2 - sy1 > 4 ? sy1 + 2 : sy1;
+    const iy2 = sy2 - sy1 > 4 ? sy2 - 2 : sy2;
+    const ix1 = sx2 - sx1 > 4 ? sx1 + 2 : sx1;
+    const ix2 = sx2 - sx1 > 4 ? sx2 - 2 : sx2;
+    let x1 = Math.max(0, Math.min(srcWidth, ix1));
+    let x2 = Math.max(0, Math.min(srcWidth, ix2));
+    let y1 = Math.max(0, Math.min(srcHeight, iy1));
+    let y2 = Math.max(0, Math.min(srcHeight, iy2));
+    if (x2 <= x1) {
+        x1 = Math.min(Math.max(0, x1), srcWidth - 1);
+        x2 = x1 + 1;
+    }
+    if (y2 <= y1) {
+        y1 = Math.min(Math.max(0, y1), srcHeight - 1);
+        y2 = y1 + 1;
+    }
+    for (let py = y1; py < y2; py++) {
+        for (let px = x1; px < x2; px++) {
+            const si = (py * srcWidth + px) * 4;
+            rs.push(data[si]); gs.push(data[si+1]); bs.push(data[si+2]); as.push(data[si+3]);
+        }
+    }
+    rs.sort((a,b)=>a-b); gs.sort((a,b)=>a-b); bs.sort((a,b)=>a-b); as.sort((a,b)=>a-b);
+    const mid = (rs.length - 1) / 2;
+    const lo = Math.floor(mid), hi = Math.ceil(mid);
+    return [
+        Math.round((rs[lo]+rs[hi])/2),
+        Math.round((gs[lo]+gs[hi])/2),
+        Math.round((bs[lo]+bs[hi])/2),
+        Math.round((as[lo]+as[hi])/2),
+    ];
+}
+
+function axisBlockBounds(index, beforeCount, mainStart, mainSpan, mainCount, afterCount, totalSize) {
+    if (index < beforeCount) {
+        const end = mainStart;
+        return [
+            Math.floor(index * end / beforeCount),
+            Math.floor((index + 1) * end / beforeCount),
+        ];
+    }
+    if (index < beforeCount + mainCount) {
+        const k = index - beforeCount;
+        return [
+            mainStart + Math.floor(k * mainSpan / mainCount),
+            mainStart + Math.floor((k + 1) * mainSpan / mainCount),
+        ];
+    }
+    const afterStart = mainStart + mainSpan;
+    const afterSpan = totalSize - afterStart;
+    const k = index - beforeCount - mainCount;
+    return [
+        afterStart + Math.floor(k * afterSpan / afterCount),
+        afterStart + Math.floor((k + 1) * afterSpan / afterCount),
+    ];
+}
+
 function cleanNearDuplicateColors(imageData, tolerance = 2) {
     const data = imageData.data;
     const colors = new Map();
@@ -835,38 +894,28 @@ async function snapToGrid(blockSize) {
 
     console.log(`Snapping: N_x=${N_x} N_y=${N_y} approx=${grid.approxBlockSize.toFixed(2)} offset=(${xo},${yo}) span=${spanX}×${spanY}`);
 
+    const blockW = spanX / N_x;
+    const blockH = spanY / N_y;
+    const padLeft = Math.max(0, Math.round(xo / blockW));
+    const padRight = Math.max(0, Math.round((srcWidth - (xo + spanX)) / blockW));
+    const padTop = Math.max(0, Math.round(yo / blockH));
+    const padBottom = Math.max(0, Math.round((srcHeight - (yo + spanY)) / blockH));
+    const outW = Math.max(1, padLeft + N_x + padRight);
+    const outH = Math.max(1, padTop + N_y + padBottom);
+
     const canvas = document.createElement("canvas");
-    canvas.width = N_x;
-    canvas.height = N_y;
+    canvas.width = outW;
+    canvas.height = outH;
     const ctx = canvas.getContext("2d");
-    const outImageData = ctx.createImageData(N_x, N_y);
+    const outImageData = ctx.createImageData(outW, outH);
     const outData = outImageData.data;
 
-    for (let by = 0; by < N_y; by++) {
-        const sy1 = yo + Math.floor(by * spanY / N_y);
-        const sy2 = yo + Math.floor((by+1) * spanY / N_y);
-        for (let bx = 0; bx < N_x; bx++) {
-            const sx1 = xo + Math.floor(bx * spanX / N_x);
-            const sx2 = xo + Math.floor((bx+1) * spanX / N_x);
-            const rs = [], gs = [], bs = [], as = [];
-            const iy1 = sy2 - sy1 > 4 ? sy1 + 2 : sy1;
-            const iy2 = sy2 - sy1 > 4 ? sy2 - 2 : sy2;
-            const ix1 = sx2 - sx1 > 4 ? sx1 + 2 : sx1;
-            const ix2 = sx2 - sx1 > 4 ? sx2 - 2 : sx2;
-            for (let py = iy1; py < iy2; py++) {
-                for (let px = ix1; px < ix2; px++) {
-                    const si = (Math.min(py, srcHeight-1) * srcWidth + Math.min(px, srcWidth-1)) * 4;
-                    rs.push(data[si]); gs.push(data[si+1]); bs.push(data[si+2]); as.push(data[si+3]);
-                }
-            }
-            rs.sort((a,b)=>a-b); gs.sort((a,b)=>a-b); bs.sort((a,b)=>a-b); as.sort((a,b)=>a-b);
-            const mid = (rs.length - 1) / 2;
-            const lo = Math.floor(mid), hi = Math.ceil(mid);
-            const r = Math.round((rs[lo]+rs[hi])/2);
-            const g = Math.round((gs[lo]+gs[hi])/2);
-            const b = Math.round((bs[lo]+bs[hi])/2);
-            const a = Math.round((as[lo]+as[hi])/2);
-            const dstIdx = (by * N_x + bx) * 4;
+    for (let by = 0; by < outH; by++) {
+        const [sy1, sy2] = axisBlockBounds(by, padTop, yo, spanY, N_y, padBottom, srcHeight);
+        for (let bx = 0; bx < outW; bx++) {
+            const [sx1, sx2] = axisBlockBounds(bx, padLeft, xo, spanX, N_x, padRight, srcWidth);
+            const [r, g, b, a] = sampleMedianColor(data, srcWidth, srcHeight, sx1, sx2, sy1, sy2);
+            const dstIdx = (by * outW + bx) * 4;
             outData[dstIdx]     = r;
             outData[dstIdx + 1] = g;
             outData[dstIdx + 2] = b;
@@ -880,7 +929,7 @@ async function snapToGrid(blockSize) {
     editedImageURL = snappedImageURL;
     editedBlob = await fetch(editedImageURL).then((res) => res.blob());
 
-    lastSnapGeometry = { xo, yo, spanX, spanY, srcWidth, srcHeight };
+    lastSnapGeometry = { xo, yo, spanX, spanY, srcWidth, srcHeight, outputWidth: outW, outputHeight: outH, fullContext: true };
     setupSnappedImage(editedImageURL);
     localStorage.setItem("editedImage", editedImageURL);
     console.log(`LocalStorage updated with edited image after snapping`);

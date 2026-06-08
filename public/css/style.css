@@ -290,6 +290,7 @@ body {
 	flex-direction: column;
 	justify-content: space-between;
 	gap: 2rem;
+	width: 330px;
 	min-width: 330px;
 }
 #options .button {
@@ -581,16 +582,20 @@ input[type="range"]::-moz-range-thumb {
     }
 	#options-and-editor {
 		flex-direction: column;
+		align-items: center;
 	}
 
 	#comparison {
 		/* stacked layout: image sits above the controls, so leave more of the
-		   viewport height for the buttons below it. */
+		   viewport height for the buttons below it. The base align-self:flex-start
+		   would left-align it in this column; center it so it lines up with the
+		   controls below. */
+		align-self: center;
 		width: min(85vw, calc(var(--img-ar) * 70vh));
 		max-width: 85vw;
 	}
 	#options {
-		width: min(85vw, calc(var(--img-ar) * 70vh));
+		width: 330px;
 		min-width: 330px;
 	}
 	header .button {

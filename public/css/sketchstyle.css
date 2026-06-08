@@ -116,6 +116,7 @@ canvas {
     flex-direction: column;
     justify-content: space-between;
     gap: 2rem;
+    width: 330px;
     min-width: 330px;
 }
 
@@ -132,6 +133,13 @@ canvas {
     display: flex;
     flex-direction: column;
     align-items: stretch;
+}
+
+/* Keep the color group (label, picker, swatches) the same compact width and
+   centered in the panel — they all stretch to the container's width. */
+#palette-container {
+    width: calc(50% + 30px);
+    align-self: center;
 }
 
 .tool label {
@@ -279,15 +287,19 @@ canvas {
     }
 
     /* Stacked: viewer sits above the tools, so give up vertical room (70vh)
-       for the buttons below it — mirrors the editor's #comparison. */
+       for the buttons below it — mirrors the editor's #comparison. The base
+       align-self:flex-start would left-align it in this column; center it so
+       it lines up with the tools below. */
     .canvas-container {
+        align-self: center;
         width: min(85vw, calc(var(--img-ar) * 70vh));
         max-width: 85vw;
     }
 
-    /* Tools match the viewer width but never go below 330px — mirrors #options. */
+    /* Same fixed panel width as desktop, so the buttons and palette size the
+       same way on mobile. */
     .tools-container {
-        width: min(85vw, calc(var(--img-ar) * 70vh));
+        width: 330px;
         min-width: 330px;
     }
     .color-palette {
