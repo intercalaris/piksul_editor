@@ -114,8 +114,8 @@ canvas {
 .tools-container {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: 9rem;
+    justify-content: flex-start;
+    gap: 2rem;
     width: 330px;
     min-width: 330px;
 }
@@ -310,12 +310,10 @@ canvas {
     }
 
     /* Same fixed panel width as desktop, so the buttons and palette size the
-       same way on mobile. The big desktop gap would just push content off a
-       phone screen, so keep it small when stacked. */
+       same way on mobile. */
     .tools-container {
         width: 330px;
         min-width: 330px;
-        gap: 2rem;
     }
     .color-palette {
         width: 100%;
