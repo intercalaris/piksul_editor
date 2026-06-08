@@ -129,6 +129,13 @@ canvas {
     gap: 2rem;
 }
 
+/* Keep Publish and the Scale/Export row as close as Paint Fill is to Undo/Reset
+   — that spacing comes purely from the buttons' own 4px margins, so drop the
+   container gap here too. */
+#output-options {
+    gap: 0;
+}
+
 .tool {
     display: flex;
     flex-direction: column;
